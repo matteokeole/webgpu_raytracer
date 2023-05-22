@@ -15,12 +15,6 @@ export class Renderer {
 
 	/**
 	 * @private
-	 * @type {?GPUAdapter}
-	 */
-	#adapter;
-
-	/**
-	 * @private
 	 * @type {?GPUDevice}
 	 */
 	#device;
@@ -30,12 +24,6 @@ export class Renderer {
 	 * @type {?GPUCanvasContext}
 	 */
 	#context;
-
-	/**
-	 * @private
-	 * @type {?String}
-	 */
-	#preferredFormat;
 
 	/**
 	 * @private
@@ -91,19 +79,15 @@ export class Renderer {
 	async build() {
 		if (navigator.gpu == null) throw "WebGPU not supported.";
 
-		const adapter = this.#adapter = await navigator.gpu.requestAdapter();
+		const adapter = await navigator.gpu.requestAdapter();
 
 		if (adapter == null) throw "Couldn't request WebGPU adapter.";
 
-		const canvas = this.#canvas;
 		const device = this.#device = await adapter.requestDevice();
-		const context = this.#context = canvas.getContext("webgpu");
-		const preferredFormat = this.#preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+		const context = this.#context = this.#canvas.getContext("webgpu");
+		const format = navigator.gpu.getPreferredCanvasFormat();
 
-		context.configure({
-			device,
-			format: preferredFormat,
-		});
+		context.configure({device, format});
 
 		const vertices = new Float32Array([
 			-1,  1,
@@ -136,28 +120,78 @@ export class Renderer {
 			device.queue.writeBuffer(this.#buffers.viewportUniform, 0, this.#viewport);
 		}
 
+		// Time uniform buffer
+		{
+			const time = Float32Array.of(Math.random());
+
+			this.#buffers.timeUniform = device.createBuffer({
+				label: "Time uniform buffer",
+				size: time.byteLength,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			});
+
+			device.queue.writeBuffer(this.#buffers.timeUniform, 0, time);
+		}
+
+		// Image storage buffer
+		{
+			const image = new Float32Array(this.#viewport[0] * this.#viewport[1]);
+
+			this.#buffers.imageStorage = device.createBuffer({
+				label: "Image storage buffer",
+				size: image.byteLength,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			});
+		}
+
 		// Bind group layout/bind group
 		{
 			this.#bindGroupLayout = device.createBindGroupLayout({
 				label: "Bind group layout",
-				entries: [{
-					binding: 0,
-					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
-					buffer: {
-						type: "uniform",
+				entries: [
+					{
+						binding: 0,
+						visibility: GPUShaderStage.FRAGMENT,
+						buffer: {
+							type: "uniform",
+						},
+					}, {
+						binding: 1,
+						visibility: GPUShaderStage.FRAGMENT,
+						buffer: {
+							type: "uniform",
+						},
+					}, {
+						binding: 2,
+						visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
+						buffer: {
+							type: "storage",
+						},
 					},
-				}],
+				],
 			});
 
 			this.#bindGroup = device.createBindGroup({
 				label: "Bind group",
 				layout: this.#bindGroupLayout,
-				entries: [{
-					binding: 0,
-					resource: {
-						buffer: this.#buffers.viewportUniform,
+				entries: [
+					{
+						binding: 0,
+						resource: {
+							buffer: this.#buffers.viewportUniform,
+						},
+					}, {
+						binding: 1,
+						resource: {
+							buffer: this.#buffers.timeUniform,
+						},
+					}, {
+						binding: 2,
+						resource: {
+							buffer: this.#buffers.imageStorage,
+						},
 					},
-				}],
+				],
 			});
 		}
 
@@ -205,9 +239,7 @@ export class Renderer {
 				fragment: {
 					module: renderShaderModule,
 					entryPoint: "fragment",
-					targets: [{
-						format: preferredFormat,
-					}],
+					targets: [{format}],
 				},
 			});
 		}
