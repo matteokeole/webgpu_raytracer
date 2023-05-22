@@ -32,14 +32,15 @@ fn vertex(input: VertexInput) -> VertexOutput {
 @fragment
 fn fragment(input: VertexOutput) -> @location(0) vec4f {
 	let position: vec2f = input.position.xy / viewport * 2 - 1;
+	let camera: vec3f = vec3f(0, 0, 0);
 
 	var sphere: Sphere;
-	sphere.position = vec3f(0, 0, -3);
+	sphere.position = vec3f(0, 0, 3);
 	sphere.radius = .5;
 
 	var ray: Ray;
-	ray.origin = vec3f(0, 0, 0) - sphere.position;
-	ray.direction = vec3f(position, 0) - ray.origin;
+	ray.origin = sphere.position - camera;
+	ray.direction = vec3f(position, 1) - ray.origin;
 
 	let a: f32 = dot(ray.direction, ray.direction);
 	let b: f32 = dot(ray.origin, ray.direction) * 2;
@@ -51,4 +52,10 @@ fn fragment(input: VertexOutput) -> @location(0) vec4f {
 	}
 
 	return vec4f();
+}
+
+fn random(seed: f32) -> f32 {
+	let n: f32 = seed * (seed + 195439) * (seed + 124395) * (seed + 845921);
+
+	return n / 4294967295;
 }
