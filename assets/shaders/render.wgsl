@@ -17,10 +17,8 @@ struct Ray {
 }
 
 struct Hit {
-	p0: vec3f,
-	normal0: vec3f,
-	p1: vec3f,
-	normal1: vec3f,
+	point: vec3f,
+	normal: vec3f,
 }
 
 struct Sphere {
@@ -41,17 +39,17 @@ fn vertex(input: VertexInput) -> VertexOutput {
 @fragment
 fn fragment(input: VertexOutput) -> @location(0) vec4f {
 	let aspect_ratio: f32 = viewport.x / viewport.y;
-	let position: vec2f = (input.position.xy / viewport * 2 - 1) * vec2f(aspect_ratio, 1);
-	let camera: vec3f = vec3f(0, 0, 2);
-	let light_direction: vec3f = normalize(vec3f(0, 1, 1));
+	var position: vec2f = (input.position.xy / viewport * 2 - 1) * vec2f(aspect_ratio, -1);
+	let light_direction: vec3f = normalize(vec3f(-1, -1, -1));
+	let background: vec4f = vec4f();
 
 	var sphere: Sphere;
-	sphere.position = vec3f(0, 0, 0);
+	sphere.position = vec3f();
 	sphere.radius = .5;
-	sphere.color = vec3f(1);
+	sphere.color = vec3f(1, .3, 0);
 
 	var ray: Ray;
-	ray.origin = camera;
+	ray.origin = vec3f(0, 0, 1);
 	ray.direction = vec3f(position, -1);
 
 	let a: f32 = dot(ray.direction, ray.direction) * 2;
@@ -59,25 +57,21 @@ fn fragment(input: VertexOutput) -> @location(0) vec4f {
 	let c: f32 = dot(ray.origin, ray.origin) - sphere.radius * sphere.radius;
 	let discriminant: f32 = b * b - 2 * a * c;
 
-	if (discriminant >= 0) {
-		let t: f32 = sqrt(discriminant) / a;
-		let t0: f32 = -b - t;
-		let t1: f32 = -b + t;
-
-		var hit: Hit;
-		hit.p0 = ray.origin + ray.direction * t0;
-		hit.normal0 = normalize(hit.p0 - sphere.position);
-		// hit.p1 = ray.origin + ray.direction * t1;
-		// hit.normal1 = normalize(hit.p1 - sphere.position);
-
-		ray.hit = hit;
-
-		let light: f32 = max(dot(hit.normal0, -light_direction), 0);
-
-		return vec4f(sphere.color * light, 1);
+	if (discriminant < 0) {
+		return background;
 	}
 
-	return vec4f();
+	let t: f32 = (-b - sqrt(discriminant)) / a;
+
+	var hit: Hit;
+	hit.point = ray.origin + ray.direction * t;
+	hit.normal = normalize(hit.point - sphere.position);
+
+	ray.hit = hit;
+
+	let light: f32 = max(dot(hit.normal, -light_direction), 0);
+
+	return vec4f(sphere.color * light, 1);
 }
 
 fn random(seed: f32) -> f32 {

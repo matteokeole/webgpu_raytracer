@@ -251,22 +251,28 @@ export class Renderer {
 	}
 
 	render() {
-		const encoder = this.#device.createCommandEncoder();
-		const renderPass = encoder.beginRenderPass({
-			colorAttachments: [{
-				view: this.#context.getCurrentTexture().createView(),
-				clearValue: [0, 0, 0, 1],
-				loadOp: "clear",
-				storeOp: "store",
-			}],
-		});
+		console.time("render");
 
-		renderPass.setPipeline(this.#renderPipeline);
-		renderPass.setBindGroup(0, this.#bindGroup);
-		renderPass.setVertexBuffer(0, this.#buffers.vertex);
-		renderPass.draw(6);
-		renderPass.end();
+		{
+			const encoder = this.#device.createCommandEncoder();
+			const renderPass = encoder.beginRenderPass({
+				colorAttachments: [{
+					view: this.#context.getCurrentTexture().createView(),
+					clearValue: [0, 0, 0, 1],
+					loadOp: "clear",
+					storeOp: "store",
+				}],
+			});
 
-		this.#device.queue.submit([encoder.finish()]);
+			renderPass.setPipeline(this.#renderPipeline);
+			renderPass.setBindGroup(0, this.#bindGroup);
+			renderPass.setVertexBuffer(0, this.#buffers.vertex);
+			renderPass.draw(6);
+			renderPass.end();
+
+			this.#device.queue.submit([encoder.finish()]);
+		}
+
+		console.timeEnd("render");
 	}
 }
