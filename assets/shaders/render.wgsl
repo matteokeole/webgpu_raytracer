@@ -13,11 +13,20 @@ struct VertexOutput {
 struct Ray {
 	origin: vec3f,
 	direction: vec3f,
+	hit: Hit,
+}
+
+struct Hit {
+	p0: vec3f,
+	normal0: vec3f,
+	p1: vec3f,
+	normal1: vec3f,
 }
 
 struct Sphere {
 	position: vec3f,
 	radius: f32,
+	color: vec3f,
 }
 
 @vertex
@@ -31,24 +40,41 @@ fn vertex(input: VertexInput) -> VertexOutput {
 
 @fragment
 fn fragment(input: VertexOutput) -> @location(0) vec4f {
-	let position: vec2f = input.position.xy / viewport * 2 - 1;
-	let camera: vec3f = vec3f(0, 0, 0);
+	let aspect_ratio: f32 = viewport.x / viewport.y;
+	let position: vec2f = (input.position.xy / viewport * 2 - 1) * vec2f(aspect_ratio, 1);
+	let camera: vec3f = vec3f(0, 0, 2);
+	let light_direction: vec3f = normalize(vec3f(0, 1, 1));
 
 	var sphere: Sphere;
-	sphere.position = vec3f(0, 0, 3);
+	sphere.position = vec3f(0, 0, 0);
 	sphere.radius = .5;
+	sphere.color = vec3f(1);
 
 	var ray: Ray;
-	ray.origin = sphere.position - camera;
-	ray.direction = vec3f(position, 1) - ray.origin;
+	ray.origin = camera;
+	ray.direction = vec3f(position, -1);
 
-	let a: f32 = dot(ray.direction, ray.direction);
+	let a: f32 = dot(ray.direction, ray.direction) * 2;
 	let b: f32 = dot(ray.origin, ray.direction) * 2;
 	let c: f32 = dot(ray.origin, ray.origin) - sphere.radius * sphere.radius;
-	let discriminant: f32 = b * b - 4 * a * c;
+	let discriminant: f32 = b * b - 2 * a * c;
 
 	if (discriminant >= 0) {
-		return vec4f(1);
+		let t: f32 = sqrt(discriminant) / a;
+		let t0: f32 = -b - t;
+		let t1: f32 = -b + t;
+
+		var hit: Hit;
+		hit.p0 = ray.origin + ray.direction * t0;
+		hit.normal0 = normalize(hit.p0 - sphere.position);
+		// hit.p1 = ray.origin + ray.direction * t1;
+		// hit.normal1 = normalize(hit.p1 - sphere.position);
+
+		ray.hit = hit;
+
+		let light: f32 = max(dot(hit.normal0, -light_direction), 0);
+
+		return vec4f(sphere.color * light, 1);
 	}
 
 	return vec4f();
