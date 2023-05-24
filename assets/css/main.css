@@ -1,7 +1,9 @@
+@import url(debug.css);
+
 body {
-	background-color: #202124;
+	margin: inherit;
 }
 
 canvas {
-	border: 1px solid #494c50;
+	display: block;
 }

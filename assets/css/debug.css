@@ -1,0 +1,28 @@
+.debug {
+	margin: 10px;
+	padding: 5px 10px;
+	position: absolute;
+	border-radius: 5px;
+	background-color: #000a;
+	backdrop-filter: blur(20px);
+	color: #ddd;
+	font-family: Consolas, monospace;
+}
+
+.debug span {
+	display: block;
+}
+.debug span::before {
+	color: #aaa;
+	font-style: italic;
+}
+
+.debug #debug-time::before {
+	content: "Time: ";
+}
+.debug #debug-position::before {
+	content: "Position: ";
+}
+.debug #debug-direction::before {
+	content: "Direction: ";
+}

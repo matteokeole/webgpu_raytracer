@@ -1,3 +1,4 @@
+import {Camera} from "src";
 import {Vector2} from "src/math";
 
 export class Renderer {
@@ -89,17 +90,17 @@ export class Renderer {
 
 		context.configure({device, format});
 
-		const vertices = new Float32Array([
-			-1,  1,
-			 1,  1,
-			-1, -1,
-			 1,  1,
-			 1, -1,
-			-1, -1,
-		]);
-
 		// Vertex buffer
 		{
+			const vertices = new Float32Array([
+				-1,  1,
+				 1,  1,
+				-1, -1,
+				 1,  1,
+				 1, -1,
+				-1, -1,
+			]);
+
 			this.#buffers.vertex = device.createBuffer({
 				label: "Vertex buffer",
 				size: vertices.byteLength,
@@ -120,27 +121,30 @@ export class Renderer {
 			device.queue.writeBuffer(this.#buffers.viewportUniform, 0, this.#viewport);
 		}
 
-		// Time uniform buffer
+		// Projection inverse uniform buffer
 		{
-			const time = Float32Array.of(Math.random());
-
-			this.#buffers.timeUniform = device.createBuffer({
-				label: "Time uniform buffer",
-				size: time.byteLength,
+			this.#buffers.projectionInverseUniform = device.createBuffer({
+				label: "Projection inverse uniform buffer",
+				size: 64,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			});
-
-			device.queue.writeBuffer(this.#buffers.timeUniform, 0, time);
 		}
 
-		// Image storage buffer
+		// View inverse uniform buffer
 		{
-			const image = new Float32Array(this.#viewport[0] * this.#viewport[1]);
+			this.#buffers.viewInverseUniform = device.createBuffer({
+				label: "View inverse uniform buffer",
+				size: 64,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			});
+		}
 
-			this.#buffers.imageStorage = device.createBuffer({
-				label: "Image storage buffer",
-				size: image.byteLength,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		// Camera position uniform buffer
+		{
+			this.#buffers.cameraPositionUniform = device.createBuffer({
+				label: "Camera position uniform buffer",
+				size: 12,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			});
 		}
 
@@ -163,9 +167,15 @@ export class Renderer {
 						},
 					}, {
 						binding: 2,
-						visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
+						visibility: GPUShaderStage.FRAGMENT,
 						buffer: {
-							type: "storage",
+							type: "uniform",
+						},
+					}, {
+						binding: 3,
+						visibility: GPUShaderStage.FRAGMENT,
+						buffer: {
+							type: "uniform",
 						},
 					},
 				],
@@ -183,12 +193,17 @@ export class Renderer {
 					}, {
 						binding: 1,
 						resource: {
-							buffer: this.#buffers.timeUniform,
+							buffer: this.#buffers.projectionInverseUniform,
 						},
 					}, {
 						binding: 2,
 						resource: {
-							buffer: this.#buffers.imageStorage,
+							buffer: this.#buffers.viewInverseUniform,
+						},
+					}, {
+						binding: 3,
+						resource: {
+							buffer: this.#buffers.cameraPositionUniform,
 						},
 					},
 				],
@@ -245,34 +260,47 @@ export class Renderer {
 		}
 	}
 
+	lock() {
+		this.#canvas.requestPointerLock();
+	}
+
+	/** @returns {Boolean} */
+	isLocked() {
+		return this.#canvas === document.pointerLockElement;
+	}
+
 	resize() {
 		this.#canvas.width = this.#viewport[0];
 		this.#canvas.height = this.#viewport[1];
+
+		this.#device.queue.writeBuffer(this.#buffers.viewportUniform, 0, this.#viewport);
 	}
 
-	render() {
-		console.time("render");
+	/** @param {Camera} camera */
+	render(camera) {
+		this.#device.queue.writeBuffer(this.#buffers.projectionInverseUniform, 0, camera.getProjectionInverse());
+		this.#device.queue.writeBuffer(this.#buffers.viewInverseUniform, 0, camera.getViewInverse());
+		this.#device.queue.writeBuffer(this.#buffers.cameraPositionUniform, 0, camera.getPosition());
 
-		{
-			const encoder = this.#device.createCommandEncoder();
-			const renderPass = encoder.beginRenderPass({
-				colorAttachments: [{
-					view: this.#context.getCurrentTexture().createView(),
-					clearValue: [0, 0, 0, 1],
-					loadOp: "clear",
-					storeOp: "store",
-				}],
-			});
+		const time = performance.now();
+		const encoder = this.#device.createCommandEncoder();
+		const renderPass = encoder.beginRenderPass({
+			colorAttachments: [{
+				view: this.#context.getCurrentTexture().createView(),
+				clearValue: [0, 0, 0, 1],
+				loadOp: "clear",
+				storeOp: "store",
+			}],
+		});
 
-			renderPass.setPipeline(this.#renderPipeline);
-			renderPass.setBindGroup(0, this.#bindGroup);
-			renderPass.setVertexBuffer(0, this.#buffers.vertex);
-			renderPass.draw(6);
-			renderPass.end();
+		renderPass.setPipeline(this.#renderPipeline);
+		renderPass.setBindGroup(0, this.#bindGroup);
+		renderPass.setVertexBuffer(0, this.#buffers.vertex);
+		renderPass.draw(6);
+		renderPass.end();
 
-			this.#device.queue.submit([encoder.finish()]);
-		}
+		this.#device.queue.submit([encoder.finish()]);
 
-		console.timeEnd("render");
+		window["debug-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`;
 	}
 }
