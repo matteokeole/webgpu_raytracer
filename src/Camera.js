@@ -95,7 +95,7 @@ export class Camera {
 		this.#up = new Vector3(0, 1, 0);
 		this.#right = new Vector3(1, 0, 0);
 
-		this.#fov = fov;
+		this.#fov = fov * PI / 180;
 		this.#aspect = aspect;
 		this.#near = near;
 		this.#far = far;
@@ -230,7 +230,7 @@ export class Camera {
 	}
 
 	project() {
-		const fov = this.#fov * PI / 180;
+		const fov = this.#fov;
 		const aspect = this.#aspect;
 		const near = this.#near;
 		const far = this.#far;

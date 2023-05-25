@@ -4,7 +4,8 @@ import {update} from "./update.js";
 export function loop() {
 	requestAnimationFrame(loop);
 
-	delta = (now = performance.now()) - then;
+	now = performance.now();
+	delta = now - then;
 	then = now;
 
 	update(delta);
