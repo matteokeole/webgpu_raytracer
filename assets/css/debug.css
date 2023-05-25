@@ -17,11 +17,14 @@
 	font-style: italic;
 }
 
-.debug #debug-time::before {
-	content: "Time: ";
+.debug #debug-render-time::before {
+	content: "Render time: ";
 }
 .debug #debug-position::before {
 	content: "Position: ";
+}
+.debug #debug-rotation::before {
+	content: "Rotation: ";
 }
 .debug #debug-direction::before {
 	content: "Direction: ";

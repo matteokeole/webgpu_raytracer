@@ -1,6 +1,9 @@
-import {Matrix4, PI, Vector2, Vector3} from "src/math";
+import {clamp, Matrix4, PI, Vector2, Vector3} from "src/math";
 
 export class Camera {
+	/** @type {Number} */
+	static TURN_VELOCITY = .0008;
+
 	/**
 	 * @private
 	 * @type {Matrix4}
@@ -41,7 +44,19 @@ export class Camera {
 	 * @private
 	 * @type {Vector3}
 	 */
-	#direction;
+	#forward;
+
+	/**
+	 * @private
+	 * @type {Vector3}
+	 */
+	#up;
+
+	/**
+	 * @private
+	 * @type {Vector3}
+	 */
+	#right;
 
 	/**
 	 * @private
@@ -68,13 +83,18 @@ export class Camera {
 	#far;
 
 	constructor(fov, aspect, near, far) {
-		this.#projection = Matrix4.identity();
-		this.#projectionInverse = Matrix4.identity();
-		this.#view = Matrix4.identity();
-		this.#viewInverse = Matrix4.identity();
+		this.#projection = new Matrix4();
+		this.#projectionInverse = new Matrix4();
+		this.#view = new Matrix4();
+		this.#viewInverse = new Matrix4();
+
 		this.#position = new Vector3();
+
 		this.#rotation = new Vector3();
-		this.#direction = new Vector3();
+		this.#forward = new Vector3(0, 0, -1);
+		this.#up = new Vector3(0, 1, 0);
+		this.#right = new Vector3(1, 0, 0);
+
 		this.#fov = fov;
 		this.#aspect = aspect;
 		this.#near = near;
@@ -132,13 +152,43 @@ export class Camera {
 	}
 
 	/** @returns {Vector3} */
-	getDirection() {
-		return this.#direction;
+	getRotation() {
+		return this.#rotation;
 	}
 
-	/** @param {Vector3} direction */
-	setDirection(direction) {
-		this.#direction = direction;
+	/** @param {Vector3} rotation */
+	setRotation(rotation) {
+		this.#rotation = rotation;
+	}
+
+	/** @returns {Vector3} */
+	getForward() {
+		return this.#forward;
+	}
+
+	/** @param {Vector3} forward */
+	setForward(forward) {
+		this.#forward = forward;
+	}
+
+	/** @returns {Vector3} */
+	getUp() {
+		return this.#up;
+	}
+
+	/** @param {Vector3} up */
+	setUp(up) {
+		this.#up = up;
+	}
+
+	/** @returns {Vector3} */
+	getRight() {
+		return this.#right;
+	}
+
+	/** @param {Vector3} right */
+	setRight(right) {
+		this.#right = right;
 	}
 
 	/** @param {Number} aspect */
@@ -148,38 +198,35 @@ export class Camera {
 
 	/** @param {Number} n */
 	truck(n) {
-		const right = this.#direction.cross(new Vector3(0, 1, 0));
-
-		this.#position.add(right.multiplyScalar(n));
+		this.#position.add(this.#right.clone().multiplyScalar(n));
 	}
 
 	/** @param {Number} n */
 	pedestal(n) {
-		const up = new Vector3(0, 1, 0);
-
-		this.#position.add(up.multiplyScalar(n));
+		this.#position.add(this.#up.clone().multiplyScalar(n));
 	}
 
 	/** @param {Number} n */
 	dolly(n) {
-		this.#position.add(this.#direction.clone().multiplyScalar(n));
+		this.#position.add(this.#forward.clone().multiplyScalar(n));
 	}
 
 	/** @param {Vector2} delta */
 	lookAt(delta) {
-		delta.multiplyScalar(.001);
+		delta.multiplyScalar(Camera.TURN_VELOCITY);
 
-		const pitchDelta = -delta[1];
-		const yawDelta = delta[0];
+		const pitch = -delta[1];
+		const yaw = delta[0];
 
-		this.#rotation[0] += yawDelta;
-		this.#rotation[1] += pitchDelta;
+		this.#rotation[0] = clamp(this.#rotation[0] + pitch, -PI * .5, PI * .5);
+		this.#rotation[1] += yaw;
 
-		this.#direction = new Vector3(
-			-Math.sin(this.#rotation[0]),
-			Math.sin(this.#rotation[1]),
-			-Math.cos(this.#rotation[0]),
+		this.#forward = new Vector3(
+			-Math.sin(this.#rotation[1]),
+			Math.sin(this.#rotation[0]),
+			-Math.cos(this.#rotation[1]),
 		);
+		this.#right = this.#forward.cross(this.#up);
 	}
 
 	project() {
@@ -201,11 +248,10 @@ export class Camera {
 
 	view() {
 		const eye = this.#position.clone();
-		const target = eye.clone().add(this.#direction);
-		const up = new Vector3(0, 1, 0);
+		const target = eye.clone().add(this.#forward);
 
 		const z = eye.subtract(target).normalize();
-		const x = up.cross(z).normalize();
+		const x = this.#up.cross(z).normalize();
 		const y = z.cross(x);
 
 		this.#view = new Matrix4(

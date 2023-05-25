@@ -301,6 +301,6 @@ export class Renderer {
 
 		this.#device.queue.submit([encoder.finish()]);
 
-		window["debug-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`;
+		window["debug-render-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`;
 	}
 }

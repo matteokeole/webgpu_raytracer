@@ -39,8 +39,8 @@ fn vertex(input: VertexInput) -> VertexOutput {
 @fragment
 fn fragment(input: VertexOutput) -> @location(0) vec4f {
 	let uv: vec2f = input.position.xy / viewport * 2 - 1;
-	let position: vec4f = vec4f(uv, 1, 1) * projection_inverse;
-	let ray_direction: vec3f = (view_inverse * vec4f(normalize(vec3f(position.xyz) / position.w), 0)).xyz;
+	let position: vec4f = projection_inverse * vec4f(uv, 1, 1);
+	let ray_direction: vec3f = (view_inverse * vec4f(normalize(position.xyz / position.w), 0)).xyz;
 
 	var ray: Ray;
 	ray.origin = camera_position;
@@ -68,6 +68,10 @@ fn trace(ray: Ray) -> vec4f {
 	}
 
 	let t: f32 = (-b - sqrt(discriminant)) / (a * 2);
+
+	if (t < 0) {
+		return background;
+	}
 
 	var hit: Hit;
 	hit.point = ray.origin + ray.direction * t;
