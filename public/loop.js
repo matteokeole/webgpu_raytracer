@@ -1,4 +1,4 @@
-import {camera, renderer, scene} from "./main.js";
+import {renderer} from "./main.js";
 import {update} from "./update.js";
 
 export function loop() {
@@ -9,7 +9,7 @@ export function loop() {
 	then = now;
 
 	update(delta);
-	renderer.render(scene, camera);
+	renderer.render();
 }
 
 let now, then = performance.now(), delta;

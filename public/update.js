@@ -15,7 +15,7 @@ export function update(delta) {
 	camera.project();
 	camera.view();
 
-	window["debug-position"].textContent = [...camera.getPosition()].map(e => e.toFixed(2)).join(' ');
-	window["debug-rotation"].textContent = [...camera.getRotation()].map(e => e.toFixed(2)).join(' ');
+	window["debug-position"].textContent = [...camera.position].map(e => e.toFixed(2)).join(' ');
+	window["debug-rotation"].textContent = [...camera.rotation].map(e => e.toFixed(2)).join(' ');
 	window["debug-direction"].textContent = [...camera.getForward()].map(e => e.toFixed(2)).join(' ');
 }

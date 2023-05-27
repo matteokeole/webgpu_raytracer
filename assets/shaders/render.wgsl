@@ -20,8 +20,10 @@ struct Ray {
 }
 
 struct Hit {
-	point: vec3f,
+	distance: f32,
+	position: vec3f,
 	normal: vec3f,
+	objectIndex: u32,
 }
 
 struct Sphere {
@@ -43,21 +45,45 @@ fn vertex(input: VertexInput) -> VertexOutput {
 fn fragment(input: VertexOutput) -> @location(0) vec4f {
 	let uv: vec2f = input.position.xy / viewport * 2 - 1;
 	let position: vec4f = projection_inverse * vec4f(uv, 1, 1);
+	let ray_direction: vec3f = (view_inverse * vec4f(normalize(position.xyz / position.w), 0)).xyz;
+
+	let background_color: vec3f = vec3f();
+	let light_direction: vec3f = normalize(vec3(-1));
+
+	let bounces: u32 = 2;
+	var multiplier: f32 = 1;
+	var color: vec3f;
 
 	var ray: Ray;
 	ray.origin = camera_position;
-	ray.direction = (view_inverse * vec4f(normalize(position.xyz / position.w), 0)).xyz;
+	ray.direction = ray_direction;
 
-	return trace(ray);
+	for (var i: u32 = 0; i < bounces; i++) {
+		let hit: Hit = trace(ray);
+
+		if (hit.distance < 0) {
+			color += background_color * multiplier;
+
+			break;
+		}
+
+		let light: f32 = max(dot(hit.normal, -light_direction), 0);
+		let object: Sphere = getObject(hit.objectIndex);
+
+		color += object.albedo * light * multiplier;
+
+		multiplier *= .7;
+
+		ray.origin = hit.position + hit.normal * .0001;
+		ray.direction = reflect(ray.direction, hit.normal);
+	}
+
+	return vec4f(color, 1);
 }
 
-fn trace(ray: Ray) -> vec4f {
-	let background: vec4f = vec4f(0, 0, 0, 1);
-	let light_direction: vec3f = normalize(vec3f(1, -1, -1));
-
+fn trace(ray: Ray) -> Hit {
 	var closestT: f32 = 3.402823466e+38;
-	var closestSphere: Sphere;
-	closestSphere.is_null = true;
+	var objectIndex: i32 = -1;
 
 	for (var i: u32 = 0; i < arrayLength(&sphere_radiuses); i = i + 1) {
 		let position: vec3f = vec3f(sphere_positions[i * 3], sphere_positions[i * 3 + 1], sphere_positions[i * 3 + 2]);
@@ -76,28 +102,49 @@ fn trace(ray: Ray) -> vec4f {
 
 		let t: f32 = (-b - sqrt(discriminant)) / a;
 
-		if (t >= closestT) {
+		if (t <= 0 || t >= closestT) {
 			continue;
 		}
 
 		closestT = t;
-		closestSphere.position = position;
-		closestSphere.radius = radius;
-		closestSphere.albedo = vec3f(sphere_albedos[i * 3], sphere_albedos[i * 3 + 1], sphere_albedos[i * 3 + 2]);
-		closestSphere.is_null = false;
+		objectIndex = i32(i);
 	}
 
-	if (closestSphere.is_null || closestT < 0) {
-		return background;
+	if (objectIndex < 0) {
+		return miss(ray);
 	}
 
-	let origin: vec3f = ray.origin - closestSphere.position;
+	return closestHit(ray, closestT, u32(objectIndex));
+}
+
+fn closestHit(ray: Ray, distance: f32, objectIndex: u32) -> Hit {
+	let object: Sphere = getObject(objectIndex);
+	let origin: vec3f = ray.origin - object.position;
 
 	var hit: Hit;
-	hit.point = origin + ray.direction * closestT;
-	hit.normal = normalize(hit.point);
+	hit.distance = distance;
+	hit.position = origin + ray.direction * distance;
+	hit.normal = normalize(hit.position);
+	hit.objectIndex = objectIndex;
 
-	let light: f32 = max(dot(hit.normal, -light_direction), 0);
+	hit.position += object.position;
 
-	return vec4f(closestSphere.albedo * light, 1);
+	return hit;
+}
+
+fn miss(ray: Ray) -> Hit {
+	var hit: Hit;
+
+	hit.distance = -1;
+
+	return hit;
+}
+
+fn getObject(index: u32) -> Sphere {
+	var object: Sphere;
+	object.position = vec3f(sphere_positions[index * 3], sphere_positions[index * 3 + 1], sphere_positions[index * 3 + 2]);
+	object.radius = sphere_radiuses[index];
+	object.albedo = vec3f(sphere_albedos[index * 3], sphere_albedos[index * 3 + 1], sphere_albedos[index * 3 + 2]);
+
+	return object;
 }

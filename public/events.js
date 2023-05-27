@@ -1,20 +1,31 @@
 import {keys, camera, renderer} from "./main.js";
 import {Vector2} from "src/math";
 
+const mouseMovement = new Vector2();
+
 const keydown = ({code}) => void keys.add(code);
 const keyup = ({code}) => void keys.delete(code);
-const mousemove = ({movementX, movementY}) => camera.lookAt(new Vector2(movementX, movementY));
+
+function mousemove({movementX, movementY}) {
+	mouseMovement[0] = movementX;
+	mouseMovement[1] = movementY;
+
+	camera.lookAt(mouseMovement);
+}
 
 addEventListener("resize", function() {
 	const width = innerWidth, height = innerHeight;
 
-	camera.setAspect(width / height);
-	renderer.setViewport(new Vector2(width, height));
+	camera.aspect = width / height;
+	renderer.viewport[0] = width;
+	renderer.viewport[1] = height;
 	renderer.resize();
 });
 
 addEventListener("click", function({target}) {
-	if (target === renderer.getCanvas()) renderer.lock();
+	if (target !== renderer.getCanvas()) return;
+
+	renderer.lock();
 });
 
 document.addEventListener("pointerlockchange", function() {

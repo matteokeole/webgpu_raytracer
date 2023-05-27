@@ -7,9 +7,8 @@ export class Scene {
 	 */
 	#spheres;
 
-	/** @param {Sphere[]} spheres */
-	constructor(spheres) {
-		this.#spheres = spheres;
+	constructor() {
+		this.#spheres = [];
 	}
 
 	/** @returns {Sphere[]} */
@@ -17,8 +16,8 @@ export class Scene {
 		return this.#spheres;
 	}
 
-	/** @param {Sphere[]} spheres */
-	setSpheres(spheres) {
-		this.#spheres = spheres;
+	/** @param {Sphere} sphere */
+	addSphere(sphere) {
+		this.#spheres.push(sphere);
 	}
 }

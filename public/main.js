@@ -13,24 +13,30 @@ export const scene = new Scene();
 export const camera = new Camera(FIELD_OF_VIEW, ASPECT_RATIO, NEAR, FAR);
 export const keys = new Set();
 
-scene.setSpheres([
+scene.addSphere(
 	new Sphere({
-		position: new Vector3(.75, 0, 0),
-		radius: .75,
+		position: new Vector3(0, -9.2, 0),
+		radius: 8.6,
 		albedo: new Vector3(.75, .34, .22),
 	}),
+);
+
+scene.addSphere(
 	new Sphere({
-		position: new Vector3(-.75, 0, 0),
+		position: new Vector3(0, 0, 0),
 		radius: .5,
 		albedo: new Vector3(1, 0, 1),
 	}),
-]);
+);
 
-renderer.setViewport(new Vector2(innerWidth, innerHeight));
-await renderer.build(scene.getSpheres().length);
+camera.position = new Vector3(0, 0, 3);
+
+renderer.scene = scene;
+renderer.camera = camera;
+renderer.viewport = new Vector2(innerWidth, innerHeight);
+
+await renderer.build();
 renderer.resize();
-
-camera.setPosition(new Vector3(0, 0, 3));
 
 document.body.appendChild(renderer.getCanvas());
 loop();
