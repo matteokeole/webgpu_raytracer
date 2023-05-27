@@ -15,21 +15,25 @@ export const keys = new Set();
 
 scene.addSphere(
 	new Sphere({
-		position: new Vector3(0, -9.2, 0),
-		radius: 8.6,
-		albedo: new Vector3(.75, .34, .22),
+		position: new Vector3(0, -11, 0),
+		radius: 10,
+		albedo: new Vector3(.2, .3, 1),
+		roughness: .1,
+		metallic: 0,
 	}),
 );
 
 scene.addSphere(
 	new Sphere({
 		position: new Vector3(0, 0, 0),
-		radius: .5,
+		radius: 1,
 		albedo: new Vector3(1, 0, 1),
+		roughness: 0,
+		metallic: 0,
 	}),
 );
 
-camera.position = new Vector3(0, 0, 3);
+camera.position = new Vector3(0, 0, 6);
 
 renderer.scene = scene;
 renderer.camera = camera;

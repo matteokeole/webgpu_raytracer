@@ -57,8 +57,15 @@ export class Renderer {
 	 */
 	#bindGroup;
 
+	/**
+	 * @private
+	 * @type {Number}
+	 */
+	#frameIndex;
+
 	constructor() {
 		this.#canvas = document.createElement("canvas");
+		this.#frameIndex = 0;
 	}
 
 	/** @returns {?HTMLCanvasElement} */
@@ -122,6 +129,11 @@ export class Renderer {
 				size: Float32Array.BYTES_PER_ELEMENT * 2,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			}),
+			timeUniform: device.createBuffer({
+				label: "Time uniform buffer",
+				size: Float32Array.BYTES_PER_ELEMENT,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			}),
 			// Camera related buffers
 			cameraPositionUniform: device.createBuffer({
 				label: "Camera position uniform buffer",
@@ -152,6 +164,16 @@ export class Renderer {
 			sphereAlbedos: device.createBuffer({
 				label: "Sphere albedos buffer",
 				size: Float32Array.BYTES_PER_ELEMENT * sphereCount * 3,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			}),
+			sphereRoughnesses: device.createBuffer({
+				label: "Sphere roughness buffer",
+				size: Float32Array.BYTES_PER_ELEMENT * sphereCount,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			}),
+			sphereMetallics: device.createBuffer({
+				label: "Sphere metallic buffer",
+				size: Float32Array.BYTES_PER_ELEMENT * sphereCount,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			}),
 		};
@@ -193,7 +215,7 @@ export class Renderer {
 					binding: 4,
 					visibility: GPUShaderStage.FRAGMENT,
 					buffer: {
-						type: "read-only-storage",
+						type: "uniform",
 					},
 				}, {
 					binding: 5,
@@ -203,6 +225,24 @@ export class Renderer {
 					},
 				}, {
 					binding: 6,
+					visibility: GPUShaderStage.FRAGMENT,
+					buffer: {
+						type: "read-only-storage",
+					},
+				}, {
+					binding: 7,
+					visibility: GPUShaderStage.FRAGMENT,
+					buffer: {
+						type: "read-only-storage",
+					},
+				}, {
+					binding: 8,
+					visibility: GPUShaderStage.FRAGMENT,
+					buffer: {
+						type: "read-only-storage",
+					},
+				}, {
+					binding: 9,
 					visibility: GPUShaderStage.FRAGMENT,
 					buffer: {
 						type: "read-only-storage",
@@ -231,34 +271,49 @@ export class Renderer {
 				}, {
 					binding: 1,
 					resource: {
-						buffer: buffers.cameraPositionUniform,
+						buffer: buffers.timeUniform,
 					},
 				}, {
 					binding: 2,
 					resource: {
-						buffer: buffers.projectionInverseUniform,
+						buffer: buffers.cameraPositionUniform,
 					},
 				}, {
 					binding: 3,
 					resource: {
-						buffer: buffers.viewInverseUniform,
+						buffer: buffers.projectionInverseUniform,
 					},
 				}, {
 					binding: 4,
 					resource: {
-						buffer: buffers.spherePositions,
+						buffer: buffers.viewInverseUniform,
 					},
 				}, {
 					binding: 5,
 					resource: {
-						buffer: buffers.sphereRadiuses,
+						buffer: buffers.spherePositions,
 					},
 				}, {
 					binding: 6,
 					resource: {
+						buffer: buffers.sphereRadiuses,
+					},
+				}, {
+					binding: 7,
+					resource: {
 						buffer: buffers.sphereAlbedos,
 					},
-				}, 
+				}, {
+					binding: 8,
+					resource: {
+						buffer: buffers.sphereRoughnesses,
+					},
+				}, {
+					binding: 9,
+					resource: {
+						buffer: buffers.sphereMetallics,
+					},
+				},
 			],
 		});
 	}
@@ -360,6 +415,8 @@ export class Renderer {
 		const spherePositions = new Float32Array(sphereCount * 3);
 		const sphereRadiuses = new Float32Array(sphereCount);
 		const sphereAlbedos = new Float32Array(sphereCount * 3);
+		const sphereRoughnesses = new Float32Array(sphereCount);
+		const sphereMetallics = new Float32Array(sphereCount);
 
 		for (let i = 0, sphere; i < sphereCount; i++) {
 			sphere = spheres[i];
@@ -367,14 +424,19 @@ export class Renderer {
 			spherePositions.set(sphere.position, i * 3);
 			sphereRadiuses[i] = sphere.radius;
 			sphereAlbedos.set(sphere.albedo, i * 3);
+			sphereRoughnesses[i] = sphere.roughness;
+			sphereMetallics[i] = sphere.metallic;
 		}
 
+		device.queue.writeBuffer(buffers.timeUniform, 0, Float32Array.of(this.#frameIndex++));
 		device.queue.writeBuffer(buffers.projectionInverseUniform, 0, camera.getProjectionInverse());
 		device.queue.writeBuffer(buffers.viewInverseUniform, 0, camera.getViewInverse());
 		device.queue.writeBuffer(buffers.cameraPositionUniform, 0, camera.position);
 		device.queue.writeBuffer(buffers.spherePositions, 0, spherePositions);
 		device.queue.writeBuffer(buffers.sphereRadiuses, 0, sphereRadiuses);
 		device.queue.writeBuffer(buffers.sphereAlbedos, 0, sphereAlbedos);
+		device.queue.writeBuffer(buffers.sphereRoughnesses, 0, sphereRoughnesses);
+		device.queue.writeBuffer(buffers.sphereMetallics, 0, sphereMetallics);
 
 		const time = performance.now();
 		const encoder = device.createCommandEncoder();
