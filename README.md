@@ -1,3 +1,3 @@
 # webgpu_raytracer
 
-WebGPU raytracing engine.
+Simple WebGPU raytracer.
