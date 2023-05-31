@@ -2,7 +2,7 @@ import {renderer} from "./main.js";
 import {update} from "./update.js";
 
 export function loop() {
-	requestAnimationFrame(loop);
+	// requestAnimationFrame(loop);
 
 	now = performance.now();
 	delta = now - then;

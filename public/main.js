@@ -3,6 +3,8 @@ import {Vector2, Vector3} from "src/math";
 import "./events.js";
 import {loop} from "./loop.js";
 
+/** @todo Inspect DOM canvas bug */
+
 export const FIELD_OF_VIEW = 45;
 export const ASPECT_RATIO = innerWidth / innerHeight;
 export const NEAR = .1;

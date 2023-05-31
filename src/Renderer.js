@@ -47,7 +47,13 @@ export class Renderer {
 
 	/**
 	 * @private
-	 * @type {?GPUPipeline}
+	 * @type {?GPUComputePipeline}
+	 */
+	#computePipeline;
+
+	/**
+	 * @private
+	 * @type {?GPURenderPipeline}
 	 */
 	#renderPipeline;
 
@@ -62,6 +68,12 @@ export class Renderer {
 	 * @type {Number}
 	 */
 	#frameIndex;
+
+	/**
+	 * @private
+	 * @type {?Float32Array}
+	 */
+	#renderedImage;
 
 	constructor() {
 		this.#canvas = document.createElement("canvas");
@@ -97,17 +109,19 @@ export class Renderer {
 		const buffers = this.createBuffers(device, sphereCount);
 		const bindGroupLayout = this.createBindGroupLayout(device);
 		const bindGroup = this.createBindGroup(device, bindGroupLayout, buffers);
-		const renderShaderModule = await this.createRenderShaderModule(device, "assets/shaders/render.wgsl");
 		const pipelineLayout = this.createPipelineLayout(device, bindGroupLayout);
-		const renderPipeline = this.createRenderPipeline(device, pipelineLayout, renderShaderModule, preferredCanvasFormat);
-		const viewport = this.viewport;
+		const computeShaderModule = await this.createComputeShaderModule(device, "assets/shaders/compute.wgsl");
+		const vertexShaderModule = await this.createRenderShaderModule(device, "assets/shaders/vertex.wgsl");
+		const fragmentShaderModule = await this.createRenderShaderModule(device, "assets/shaders/fragment.wgsl");
+		const computePipeline = this.createComputePipeline(device, pipelineLayout, computeShaderModule);
+		const renderPipeline = this.createRenderPipeline(device, pipelineLayout, vertexShaderModule, fragmentShaderModule, preferredCanvasFormat);
 
 		device.queue.writeBuffer(buffers.vertex, 0, Renderer.VERTICES);
-		device.queue.writeBuffer(buffers.viewportUniform, 0, viewport);
 
 		this.#device = device;
 		this.#context = context;
 		this.#buffers = buffers;
+		this.#computePipeline = computePipeline;
 		this.#renderPipeline = renderPipeline;
 		this.#bindGroup = bindGroup;
 	}
@@ -129,7 +143,12 @@ export class Renderer {
 				size: Float32Array.BYTES_PER_ELEMENT * 2,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			}),
-			timeUniform: device.createBuffer({
+			renderedImageStorage: device.createBuffer({
+				label: "Rendered image storage buffer",
+				size: Float32Array.BYTES_PER_ELEMENT * innerWidth * innerHeight,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			}),
+			/* timeUniform: device.createBuffer({
 				label: "Time uniform buffer",
 				size: Float32Array.BYTES_PER_ELEMENT,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -175,7 +194,7 @@ export class Renderer {
 				label: "Sphere metallic buffer",
 				size: Float32Array.BYTES_PER_ELEMENT * sphereCount,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-			}),
+			}), */
 		};
 	}
 
@@ -189,17 +208,17 @@ export class Renderer {
 			entries: [
 				{
 					binding: 0,
-					visibility: GPUShaderStage.FRAGMENT,
+					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
 					buffer: {
 						type: "uniform",
 					},
 				}, {
 					binding: 1,
-					visibility: GPUShaderStage.FRAGMENT,
+					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
 					buffer: {
-						type: "uniform",
+						type: "storage",
 					},
-				}, {
+				}, /* {
 					binding: 2,
 					visibility: GPUShaderStage.FRAGMENT,
 					buffer: {
@@ -247,7 +266,7 @@ export class Renderer {
 					buffer: {
 						type: "read-only-storage",
 					},
-				},
+				}, */
 			],
 		});
 	}
@@ -269,6 +288,11 @@ export class Renderer {
 						buffer: buffers.viewportUniform,
 					},
 				}, {
+					binding: 1,
+					resource: {
+						buffer: buffers.renderedImageStorage,
+					},
+				}, /* {
 					binding: 1,
 					resource: {
 						buffer: buffers.timeUniform,
@@ -313,8 +337,22 @@ export class Renderer {
 					resource: {
 						buffer: buffers.sphereMetallics,
 					},
-				},
+				}, */
 			],
+		});
+	}
+
+	/**
+	 * @param {GPUDevice} device
+	 * @param {String} path
+	 * @returns {GPUShaderModule}
+	 */
+	async createComputeShaderModule(device, path) {
+		const source = await (await fetch(path)).text();
+
+		return device.createShaderModule({
+			label: "Compute shader module",
+			code: source,
 		});
 	}
 
@@ -347,17 +385,35 @@ export class Renderer {
 	/**
 	 * @param {GPUDevice} device
 	 * @param {GPUPipelineLayout} pipelineLayout
-	 * @param {GPUShaderModule} renderShaderModule
+	 * @param {GPUShaderModule} computeShaderModule
+	 * @returns {GPUComputePipeline}
+	 */
+	createComputePipeline(device, pipelineLayout, computeShaderModule) {
+		return device.createComputePipeline({
+			label: "Compute pipeline",
+			layout: pipelineLayout,
+			compute: {
+				module: computeShaderModule,
+				entryPoint: "main",
+			},
+		});
+	}
+
+	/**
+	 * @param {GPUDevice} device
+	 * @param {GPUPipelineLayout} pipelineLayout
+	 * @param {GPUShaderModule} vertexShaderModule
+	 * @param {GPUShaderModule} fragmentShaderModule
 	 * @param {String} preferredCanvasFormat
 	 * @returns {GPURenderPipeline}
 	 */
-	createRenderPipeline(device, pipelineLayout, renderShaderModule, preferredCanvasFormat) {
+	createRenderPipeline(device, pipelineLayout, vertexShaderModule, fragmentShaderModule, preferredCanvasFormat) {
 		return device.createRenderPipeline({
 			label: "Render pipeline",
 			layout: pipelineLayout,
 			vertex: {
-				module: renderShaderModule,
-				entryPoint: "vertex",
+				module: vertexShaderModule,
+				entryPoint: "main",
 				buffers: [
 					{
 						arrayStride: 8,
@@ -372,8 +428,8 @@ export class Renderer {
 				],
 			},
 			fragment: {
-				module: renderShaderModule,
-				entryPoint: "fragment",
+				module: fragmentShaderModule,
+				entryPoint: "main",
 				targets: [
 					{
 						format: preferredCanvasFormat,
@@ -397,28 +453,52 @@ export class Renderer {
 		const canvas = this.#canvas;
 		const viewport = this.viewport;
 		const viewportUniform = this.#buffers.viewportUniform;
+		const renderedImage = new Float32Array(1);
 
 		canvas.width = viewport[0];
 		canvas.height = viewport[1];
 
+		// this.#buffers.renderedImageStorage.destroy();
+		// this.#buffers.renderedImageStorage = renderedImageStorage;
+
 		device.queue.writeBuffer(viewportUniform, 0, viewport);
+		device.queue.writeBuffer(this.#buffers.renderedImageStorage, 0, renderedImage);
+
+		this.#renderedImage = renderedImage;
 	}
 
 	render() {
 		const device = this.#device;
 		const buffers = this.#buffers;
+		const computePipeline = this.#computePipeline;
 		const renderPipeline = this.#renderPipeline;
 		const bindGroup = this.#bindGroup;
-		const spheres = this.scene.getSpheres();
+		/* const spheres = this.scene.getSpheres();
 		const sphereCount = spheres.length;
 		const camera = this.camera;
 		const spherePositions = new Float32Array(sphereCount * 3);
 		const sphereRadiuses = new Float32Array(sphereCount);
 		const sphereAlbedos = new Float32Array(sphereCount * 3);
 		const sphereRoughnesses = new Float32Array(sphereCount);
-		const sphereMetallics = new Float32Array(sphereCount);
+		const sphereMetallics = new Float32Array(sphereCount); */
+		const encoder = device.createCommandEncoder();
 
-		for (let i = 0, sphere; i < sphereCount; i++) {
+		const computePass = encoder.beginComputePass();
+		computePass.setPipeline(computePipeline);
+		computePass.setBindGroup(0, bindGroup);
+		computePass.dispatchWorkgroups(1);
+		computePass.end();
+
+		const renderPass = this.beginRenderPass(encoder);
+		renderPass.setPipeline(renderPipeline);
+		renderPass.setVertexBuffer(0, buffers.vertex);
+		renderPass.setBindGroup(0, bindGroup);
+		renderPass.draw(6);
+		renderPass.end();
+
+		device.queue.submit([encoder.finish()]);
+
+		/* for (let i = 0, sphere; i < sphereCount; i++) {
 			sphere = spheres[i];
 
 			spherePositions.set(sphere.position, i * 3);
@@ -428,18 +508,17 @@ export class Renderer {
 			sphereMetallics[i] = sphere.metallic;
 		}
 
-		device.queue.writeBuffer(buffers.timeUniform, 0, Float32Array.of(this.#frameIndex++));
-		device.queue.writeBuffer(buffers.projectionInverseUniform, 0, camera.getProjectionInverse());
-		device.queue.writeBuffer(buffers.viewInverseUniform, 0, camera.getViewInverse());
-		device.queue.writeBuffer(buffers.cameraPositionUniform, 0, camera.position);
-		device.queue.writeBuffer(buffers.spherePositions, 0, spherePositions);
-		device.queue.writeBuffer(buffers.sphereRadiuses, 0, sphereRadiuses);
-		device.queue.writeBuffer(buffers.sphereAlbedos, 0, sphereAlbedos);
-		device.queue.writeBuffer(buffers.sphereRoughnesses, 0, sphereRoughnesses);
-		device.queue.writeBuffer(buffers.sphereMetallics, 0, sphereMetallics);
+		// device.queue.writeBuffer(buffers.timeUniform, 0, Float32Array.of(this.#frameIndex++));
+		// device.queue.writeBuffer(buffers.projectionInverseUniform, 0, camera.getProjectionInverse());
+		// device.queue.writeBuffer(buffers.viewInverseUniform, 0, camera.getViewInverse());
+		// device.queue.writeBuffer(buffers.cameraPositionUniform, 0, camera.position);
+		// device.queue.writeBuffer(buffers.spherePositions, 0, spherePositions);
+		// device.queue.writeBuffer(buffers.sphereRadiuses, 0, sphereRadiuses);
+		// device.queue.writeBuffer(buffers.sphereAlbedos, 0, sphereAlbedos);
+		// device.queue.writeBuffer(buffers.sphereRoughnesses, 0, sphereRoughnesses);
+		// device.queue.writeBuffer(buffers.sphereMetallics, 0, sphereMetallics);
 
 		const time = performance.now();
-		const encoder = device.createCommandEncoder();
 		const renderPass = this.beginRenderPass(encoder);
 
 		renderPass.setPipeline(renderPipeline);
@@ -450,7 +529,7 @@ export class Renderer {
 
 		device.queue.submit([encoder.finish()]);
 
-		window["debug-render-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`;
+		window["debug-render-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`; */
 	}
 
 	/** @returns {GPURenderPass} */
