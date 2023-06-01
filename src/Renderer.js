@@ -452,17 +452,15 @@ export class Renderer {
 		const device = this.#device;
 		const canvas = this.#canvas;
 		const viewport = this.viewport;
-		const viewportUniform = this.#buffers.viewportUniform;
-		const renderedImage = new Float32Array(1);
+		const renderedImage = new Float32Array(viewport[0] * viewport[1]);
 
 		canvas.width = viewport[0];
 		canvas.height = viewport[1];
 
-		// this.#buffers.renderedImageStorage.destroy();
-		// this.#buffers.renderedImageStorage = renderedImageStorage;
-
-		device.queue.writeBuffer(viewportUniform, 0, viewport);
+		device.queue.writeBuffer(this.#buffers.viewportUniform, 0, viewport);
 		device.queue.writeBuffer(this.#buffers.renderedImageStorage, 0, renderedImage);
+
+		console.log(viewport);
 
 		this.#renderedImage = renderedImage;
 	}
@@ -486,13 +484,13 @@ export class Renderer {
 		const computePass = encoder.beginComputePass();
 		computePass.setPipeline(computePipeline);
 		computePass.setBindGroup(0, bindGroup);
-		computePass.dispatchWorkgroups(1);
+		computePass.dispatchWorkgroups(1, 1, 1);
 		computePass.end();
 
 		const renderPass = this.beginRenderPass(encoder);
 		renderPass.setPipeline(renderPipeline);
-		renderPass.setVertexBuffer(0, buffers.vertex);
 		renderPass.setBindGroup(0, bindGroup);
+		renderPass.setVertexBuffer(0, buffers.vertex);
 		renderPass.draw(6);
 		renderPass.end();
 

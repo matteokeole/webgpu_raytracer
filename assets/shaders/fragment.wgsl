@@ -3,9 +3,9 @@
 
 @fragment
 fn main(@builtin(position) position: vec4f) -> @location(0) vec4f {
-	let uv: vec2f = position.xy;
-	let index: u32 = u32(viewport.x * uv.y + uv.x);
-	let color: f32 = rendered_image[index];
+	let uv: vec2u = vec2u(position.xy);
+	let index: u32 = uv.x + uv.y * u32(viewport.x);
+	let color: vec3f = vec3f(rendered_image[index]);
 
-	return vec4f(vec3f(color), 1);
+	return vec4f(color, 1);
 }

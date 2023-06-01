@@ -2,19 +2,16 @@
 @binding(1) @group(0) var<storage, read_write> rendered_image: array<f32>;
 
 @compute
-@workgroup_size(1)
+@workgroup_size(1, 1, 1)
 fn main() {
-	let step: f32 = 1 / viewport.x;
-	var prev: f32 = 0;
+	let v: vec2u = vec2u(viewport);
+	let step: f32 = 1 / (viewport.x * viewport.y);
+	var prev: f32;
 
-	for (var i: i32 = 0; i < i32(viewport.x); i++) {
-		if (prev > 1) {
-			rendered_image[i] = 1;
-
-			continue;
+	for (var y: u32; y < v.y; y++) {
+		for (var x: u32; x < v.x; x++) {
+			rendered_image[x + y * v.x] = prev + step;
+			prev = rendered_image[x + y * v.x];
 		}
-
-		rendered_image[i] = prev + step;
-		prev = rendered_image[i];
 	}
 }
