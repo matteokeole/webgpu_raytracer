@@ -69,12 +69,6 @@ export class Renderer {
 	 */
 	#frameIndex;
 
-	/**
-	 * @private
-	 * @type {?Float32Array}
-	 */
-	#renderedImage;
-
 	constructor() {
 		this.#canvas = document.createElement("canvas");
 		this.#frameIndex = 0;
@@ -140,7 +134,7 @@ export class Renderer {
 			}),
 			viewportUniform: device.createBuffer({
 				label: "Viewport uniform buffer",
-				size: Float32Array.BYTES_PER_ELEMENT * 2,
+				size: Uint32Array.BYTES_PER_ELEMENT * 2,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			}),
 			renderedImageStorage: device.createBuffer({
@@ -451,7 +445,8 @@ export class Renderer {
 	resize() {
 		const device = this.#device;
 		const canvas = this.#canvas;
-		const viewport = this.viewport;
+		/** @todo Time to add Vector2/3/4u? */
+		const viewport = Uint32Array.of(this.viewport[0], this.viewport[1]);
 		const renderedImage = new Float32Array(viewport[0] * viewport[1]);
 
 		canvas.width = viewport[0];
@@ -459,10 +454,6 @@ export class Renderer {
 
 		device.queue.writeBuffer(this.#buffers.viewportUniform, 0, viewport);
 		device.queue.writeBuffer(this.#buffers.renderedImageStorage, 0, renderedImage);
-
-		console.log(viewport);
-
-		this.#renderedImage = renderedImage;
 	}
 
 	render() {
@@ -479,12 +470,13 @@ export class Renderer {
 		const sphereAlbedos = new Float32Array(sphereCount * 3);
 		const sphereRoughnesses = new Float32Array(sphereCount);
 		const sphereMetallics = new Float32Array(sphereCount); */
+		const time = performance.now();
 		const encoder = device.createCommandEncoder();
 
 		const computePass = encoder.beginComputePass();
 		computePass.setPipeline(computePipeline);
 		computePass.setBindGroup(0, bindGroup);
-		computePass.dispatchWorkgroups(1, 1, 1);
+		computePass.dispatchWorkgroups(1);
 		computePass.end();
 
 		const renderPass = this.beginRenderPass(encoder);
@@ -516,7 +508,6 @@ export class Renderer {
 		// device.queue.writeBuffer(buffers.sphereRoughnesses, 0, sphereRoughnesses);
 		// device.queue.writeBuffer(buffers.sphereMetallics, 0, sphereMetallics);
 
-		const time = performance.now();
 		const renderPass = this.beginRenderPass(encoder);
 
 		renderPass.setPipeline(renderPipeline);
@@ -525,9 +516,9 @@ export class Renderer {
 		renderPass.draw(6);
 		renderPass.end();
 
-		device.queue.submit([encoder.finish()]);
+		device.queue.submit([encoder.finish()]); */
 
-		window["debug-render-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`; */
+		window["debug-render-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`;
 	}
 
 	/** @returns {GPURenderPass} */

@@ -1,17 +1,21 @@
-@binding(0) @group(0) var<uniform> viewport: vec2f;
+@binding(0) @group(0) var<uniform> viewport: vec2u;
 @binding(1) @group(0) var<storage, read_write> rendered_image: array<f32>;
 
-@compute
-@workgroup_size(1, 1, 1)
-fn main() {
-	let v: vec2u = vec2u(viewport);
-	let step: f32 = 1 / (viewport.x * viewport.y);
-	var prev: f32;
+const WORKGROUP_SIZE: vec2u = vec2u(8);
 
-	for (var y: u32; y < v.y; y++) {
-		for (var x: u32; x < v.x; x++) {
-			rendered_image[x + y * v.x] = prev + step;
-			prev = rendered_image[x + y * v.x];
+@compute
+@workgroup_size(8, 8)
+fn main(@builtin(global_invocation_id) id: vec3u) {
+	let offset: vec2u = viewport / WORKGROUP_SIZE;
+	let tile: vec2f = vec2f(offset);
+	var x: f32;
+	var i: u32;
+
+	for (var y: f32; y < tile.y; y += 1) {
+		for (x = 0; x < tile.x; x += 1) {
+			i = (u32(x) + offset.x * id.x) + (u32(y) + offset.y * id.y) * viewport.x;
+
+			rendered_image[i] = x / tile.x * y / tile.y;
 		}
 	}
 }
