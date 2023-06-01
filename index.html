@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" href="data:">
+		<style>
+			body {
+				margin: 0;
+			}
+		</style>
+		<script type="module">
+			const canvas = document.createElement("canvas");
+
+			if (navigator.gpu == null) throw Error();
+
+			const adapter = await navigator.gpu.requestAdapter();
+
+			if (adapter == null) throw Error();
+
+			const context = canvas.getContext("webgpu");
+			const device = await adapter.requestDevice();
+			const format = navigator.gpu.getPreferredCanvasFormat();
+
+			context.configure({device, format});
+
+			canvas.width = innerWidth;
+			canvas.height = innerHeight;
+
+			document.body.appendChild(canvas);
+		</script>
+		<title>WebGPU Canvas Artefacts</title>
+	</head>
+
+	<body></body>
+</html>
