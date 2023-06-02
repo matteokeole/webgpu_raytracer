@@ -4,7 +4,7 @@
 const WORKGROUP_SIZE: vec2u = vec2u(8);
 
 @compute
-@workgroup_size(8, 8)
+@workgroup_size(4, 4, 1)
 fn main(@builtin(global_invocation_id) id: vec3u) {
 	let offset: vec2u = viewport / WORKGROUP_SIZE;
 	let tile: vec2f = vec2f(offset);

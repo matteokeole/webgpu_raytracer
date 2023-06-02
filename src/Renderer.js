@@ -476,7 +476,7 @@ export class Renderer {
 		const computePass = encoder.beginComputePass();
 		computePass.setPipeline(computePipeline);
 		computePass.setBindGroup(0, bindGroup);
-		computePass.dispatchWorkgroups(1);
+		computePass.dispatchWorkgroups(4, 4, 1);
 		computePass.end();
 
 		const renderPass = this.beginRenderPass(encoder);
