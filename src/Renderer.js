@@ -1,5 +1,5 @@
 import {Vector2} from "src/math";
-import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "src/utils";
+import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "./utils.js";
 
 export function Renderer() {
 	const canvas = document.createElement("canvas");

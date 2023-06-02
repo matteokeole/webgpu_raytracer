@@ -1,5 +1,6 @@
 import {Renderer} from "src";
 import {Vector2} from "src/math";
+import {start} from "./loop.js";
 
 export const renderer = new Renderer();
 
@@ -9,4 +10,4 @@ await renderer.build();
 
 document.body.appendChild(renderer.getCanvas());
 
-renderer.render();
+start();
