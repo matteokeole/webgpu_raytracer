@@ -3,6 +3,7 @@
 struct Sphere {
 	origin: vec3f,
 	radius: f32,
+	albedo: vec3f,
 }
 
 struct Ray {
@@ -12,25 +13,28 @@ struct Ray {
 
 @compute
 @workgroup_size(8, 8, 1)
-fn main(@builtin(global_invocation_id) global_invocation_id : vec3u) {
+fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let viewport: vec2u = textureDimensions(texture);
 	let id: vec2f = vec2f(f32(global_invocation_id.x), f32(global_invocation_id.y));
 
+	// TODO: Simplify
 	// [0, 400] -> [-200, 200]
 	let position: vec2f = (id - vec2f(viewport) * .5) / f32(viewport.x);
 
 	var sphere: Sphere;
 	sphere.origin = vec3f(0, 0, 3);
 	sphere.radius = .5;
+	sphere.albedo = vec3f(1, .2, 0);
 
 	var ray: Ray;
 	ray.origin = vec3f(0, 0, 0);
+	// TODO: Why Z must be 1?
 	ray.direction = vec3f(position, 1);
 
 	var color: vec3f = vec3f(0);
 
 	if (trace(ray, sphere)) {
-		color = vec3f(1);
+		color = sphere.albedo;
 	}
 
 	textureStore(texture, global_invocation_id.xy, vec4f(color, 1));
