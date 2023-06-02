@@ -13,7 +13,7 @@ function mousemove({movementX, movementY}) {
 	camera.lookAt(mouseMovement);
 }
 
-addEventListener("resize", function() {
+/* addEventListener("resize", function() {
 	const width = innerWidth, height = innerHeight;
 
 	camera.aspect = width / height;
@@ -40,4 +40,4 @@ document.addEventListener("pointerlockchange", function() {
 
 		keys.clear();
 	}
-});
+}); */
