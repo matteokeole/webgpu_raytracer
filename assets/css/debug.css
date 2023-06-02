@@ -18,15 +18,6 @@
 	font-style: italic;
 }
 
-.debug #debug-position::before {
-	content: "Position: ";
-}
-.debug #debug-rotation::before {
-	content: "Rotation: ";
-}
-.debug #debug-direction::before {
-	content: "Direction: ";
-}
 .debug #debug-render-time::before {
 	content: "Render time: ";
 }

@@ -1,4 +1,3 @@
-import {Camera, Scene} from "src";
 import {Vector2} from "src/math";
 
 export class Renderer {
@@ -22,12 +21,6 @@ export class Renderer {
 
 	/** @type {?Vector2} */
 	viewport;
-
-	/** @type {?Scene} */
-	scene;
-
-	/** @type {?Camera} */
-	camera;
 
 	/**
 	 * @private
@@ -53,15 +46,8 @@ export class Renderer {
 	 */
 	#bindGroup;
 
-	/**
-	 * @private
-	 * @type {Number}
-	 */
-	#frameIndex;
-
 	constructor() {
 		this.#canvas = document.createElement("canvas");
-		this.#frameIndex = 0;
 	}
 
 	/** @returns {?HTMLCanvasElement} */
@@ -70,9 +56,6 @@ export class Renderer {
 	}
 
 	async build() {
-		const scene = this.scene;
-
-		if (scene == null) throw "No scene bound to the renderer.";
 		if (navigator.gpu == null) throw "WebGPU not supported.";
 
 		const adapter = await navigator.gpu.requestAdapter();
@@ -89,8 +72,7 @@ export class Renderer {
 			format: preferredCanvasFormat,
 		});
 
-		const sphereCount = scene.getSpheres().length;
-		const buffers = this.createBuffers(device, sphereCount);
+		const buffers = this.createBuffers(device);
 		const bindGroupLayout = this.createBindGroupLayout(device);
 		const bindGroup = this.createBindGroup(device, bindGroupLayout, buffers);
 		const pipelineLayout = this.createPipelineLayout(device, bindGroupLayout);
@@ -107,10 +89,9 @@ export class Renderer {
 
 	/**
 	 * @param {GPUDevice} device
-	 * @param {Number} sphereCount
 	 * @returns {Object.<String, GPUBuffer>}
 	 */
-	createBuffers(device, sphereCount) {
+	createBuffers(device) {
 		return {
 			viewportUniform: device.createBuffer({
 				label: "Viewport uniform buffer",
