@@ -3,48 +3,9 @@ import {Vector2} from "src/math";
 export class Renderer {
 	/**
 	 * @private
-	 * @type {?GPUDevice}
-	 */
-	#device;
-
-	/**
-	 * @private
 	 * @type {?HTMLCanvasElement}
 	 */
 	#canvas;
-
-	/**
-	 * @private
-	 * @type {?GPUCanvasContext}
-	 */
-	#context;
-
-	/** @type {?Vector2} */
-	viewport;
-
-	/**
-	 * @private
-	 * @type {?Object.<String, GPUBuffer>}
-	 */
-	#buffers;
-
-	/**
-	 * @private
-	 * @type {?GPUComputePipeline}
-	 */
-	#computePipeline;
-
-	/**
-	 * @private
-	 * @type {?GPURenderPipeline}
-	 */
-	#renderPipeline;
-
-	/**
-	 * @private
-	 * @type {?GPUBindGroup}
-	 */
-	#bindGroup;
 
 	constructor() {
 		this.#canvas = document.createElement("canvas");
@@ -63,8 +24,7 @@ export class Renderer {
 		if (adapter == null) throw "Couldn't request WebGPU adapter.";
 
 		const device = await adapter.requestDevice();
-		const canvas = this.#canvas;
-		const context = canvas.getContext("webgpu");
+		const context = this.#canvas.getContext("webgpu");
 		const preferredCanvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
 		context.configure({
@@ -73,18 +33,26 @@ export class Renderer {
 		});
 
 		const buffers = this.createBuffers(device);
-		const bindGroupLayout = this.createBindGroupLayout(device);
-		const bindGroup = this.createBindGroup(device, bindGroupLayout, buffers);
-		const pipelineLayout = this.createPipelineLayout(device, bindGroupLayout);
-		const computePipeline = await this.createComputePipeline(device, pipelineLayout, "assets/shaders/compute.wgsl");
-		const renderPipeline = await this.createRenderPipeline(device, pipelineLayout, "assets/shaders/vertex.wgsl", "assets/shaders/fragment.wgsl", preferredCanvasFormat);
+		this.renderedImageView = buffers.renderedImageStorage.createView();
+		this.sampler = device.createSampler({
+			addressModeU: "repeat",
+			addressModeV: "repeat",
+			magFilter: "nearest", // "nearest" -> pixelated
+			minFilter: "nearest",
+			mipmapFilter: "nearest",
+			maxAnisotropy: 1,
+		});
 
-		this.#device = device;
-		this.#context = context;
-		this.#buffers = buffers;
-		this.#computePipeline = computePipeline;
-		this.#renderPipeline = renderPipeline;
-		this.#bindGroup = bindGroup;
+		const computeShaderModule = await this.createShaderModule(device, "assets/shaders/compute.wgsl");
+		this.createComputePipeline(device, computeShaderModule);
+
+		const vertexShaderModule = await this.createShaderModule(device, "assets/shaders/vertex.wgsl");
+		const fragmentShaderModule = await this.createShaderModule(device, "assets/shaders/fragment.wgsl");
+		this.createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, preferredCanvasFormat);
+
+		this.device = device;
+		this.context = context;
+		this.buffers = buffers;
 	}
 
 	/**
@@ -93,97 +61,66 @@ export class Renderer {
 	 */
 	createBuffers(device) {
 		return {
-			viewportUniform: device.createBuffer({
-				label: "Viewport uniform buffer",
-				size: Uint32Array.BYTES_PER_ELEMENT * 2,
-				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-			}),
-			renderedImageStorage: device.createBuffer({
-				label: "Rendered image storage buffer",
-				size: Float32Array.BYTES_PER_ELEMENT * innerWidth * innerHeight,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			renderedImageStorage: device.createTexture({
+				size: {
+					width: innerWidth,
+					height: innerHeight,
+				},
+				format: "rgba8unorm",
+				usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUBufferUsage.COPY_DST,
 			}),
 		};
 	}
 
 	/**
-	 * @param {GPUDevice} device
-	 * @returns {GPUBindGroupLayout}
-	 */
-	createBindGroupLayout(device) {
-		return device.createBindGroupLayout({
-			label: "Bind group layout",
-			entries: [
-				{
-					binding: 0,
-					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
-					buffer: {
-						type: "uniform",
-					},
-				}, {
-					binding: 1,
-					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
-					buffer: {
-						type: "storage",
-					},
-				},
-			],
-		});
-	}
-
-	/**
-	 * @param {GPUDevice} device
-	 * @param {GPUBindGroupLayout} bindGroupLayout
-	 * @param {Object.<String, GPUBuffer>} buffers
-	 * @returns {GPUBindGroup}
-	 */
-	createBindGroup(device, bindGroupLayout, buffers) {
-		return device.createBindGroup({
-			label: "Bind group",
-			layout: bindGroupLayout,
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: buffers.viewportUniform,
-					},
-				}, {
-					binding: 1,
-					resource: {
-						buffer: buffers.renderedImageStorage,
-					},
-				},
-			],
-		});
-	}
-
-	/**
-	 * @param {GPUDevice} device
-	 * @param {GPUBindGroupLayout} bindGroupLayout
-	 * @returns {GPUPipelineLayout}
-	 */
-	createPipelineLayout(device, bindGroupLayout) {
-		return device.createPipelineLayout({
-			label: "Pipeline layout",
-			bindGroupLayouts: [bindGroupLayout],
-		});
-	}
-
-	/**
-	 * @param {GPUDevice} device
-	 * @param {GPUPipelineLayout} pipelineLayout
 	 * @param {String} path
-	 * @returns {GPUComputePipeline}
+	 * @returns {GPUShaderModule}
 	 */
-	async createComputePipeline(device, pipelineLayout, path) {
-		return device.createComputePipeline({
-			label: "Compute pipeline",
-			layout: pipelineLayout,
+	async createShaderModule(device, path) {
+		const source = await (await fetch(path)).text();
+
+		return device.createShaderModule({
+			code: source,
+		});
+	}
+
+	/**
+	 * @param {GPUDevice} device
+	 * @param {GPUShaderModule} computeShaderModule
+	 */
+	createComputePipeline(device, computeShaderModule) {
+		const computeBindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.COMPUTE,
+					storageTexture: {
+						access: "write-only",
+						format: "rgba8unorm",
+						viewDimension: "2d",
+					},
+				},
+			],
+		});
+
+		this.computeBindGroup = device.createBindGroup({
+			layout: computeBindGroupLayout,
+			entries: [
+				{
+					binding: 0,
+					resource: this.renderedImageView,
+				},
+			],
+		});
+
+		const computePipelineLayout = device.createPipelineLayout({
+			bindGroupLayouts: [computeBindGroupLayout],
+		});
+
+		this.computePipeline = device.createComputePipeline({
+			layout: computePipelineLayout,
 			compute: {
-				module: device.createShaderModule({
-					label: "Compute shader module",
-					code: await (await fetch(path)).text(),
-				}),
+				module: computeShaderModule,
 				entryPoint: "main",
 			},
 		});
@@ -191,34 +128,52 @@ export class Renderer {
 
 	/**
 	 * @param {GPUDevice} device
-	 * @param {GPUPipelineLayout} pipelineLayout
-	 * @param {String} vertexPath
-	 * @param {String} fragmentPath
-	 * @param {String} preferredCanvasFormat
-	 * @returns {GPURenderPipeline}
+	 * @param {GPUShaderModule} vertexShaderModule
+	 * @param {GPUShaderModule} fragmentShaderModule
+	 * @param {String} format
 	 */
-	async createRenderPipeline(device, pipelineLayout, vertexPath, fragmentPath, preferredCanvasFormat) {
-		return device.createRenderPipeline({
-			label: "Render pipeline",
-			layout: pipelineLayout,
+	createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, format) {
+		const renderBindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.FRAGMENT,
+					sampler: {},
+				}, {
+					binding: 1,
+					visibility: GPUShaderStage.FRAGMENT,
+					texture: {},
+				},
+			],
+		});
+
+		this.renderBindGroup = device.createBindGroup({
+			layout: renderBindGroupLayout,
+			entries: [
+				{
+					binding: 0,
+					resource: this.sampler,
+				}, {
+					binding: 1,
+					resource: this.renderedImageView,
+				},
+			],
+		});
+
+		const renderPipelineLayout = device.createPipelineLayout({
+			bindGroupLayouts: [renderBindGroupLayout],
+		});
+
+		this.renderPipeline = device.createRenderPipeline({
+			layout: renderPipelineLayout,
 			vertex: {
-				module: device.createShaderModule({
-					label: "Vertex shader module",
-					code: await (await fetch(vertexPath)).text(),
-				}),
+				module: vertexShaderModule,
 				entryPoint: "main",
 			},
 			fragment: {
-				module: device.createShaderModule({
-					label: "Fragment shader module",
-					code: await (await fetch(fragmentPath)).text(),
-				}),
+				module: fragmentShaderModule,
 				entryPoint: "main",
-				targets: [
-					{
-						format: preferredCanvasFormat,
-					},
-				],
+				targets: [{format}],
 			},
 		});
 	}
@@ -233,37 +188,30 @@ export class Renderer {
 	}
 
 	resize() {
-		const device = this.#device;
-		const canvas = this.#canvas;
-		const viewport = new Uint32Array(this.viewport);
-		const renderedImage = new Float32Array(viewport[0] * viewport[1]);
-
-		canvas.width = viewport[0];
-		canvas.height = viewport[1];
-
-		device.queue.writeBuffer(this.#buffers.viewportUniform, 0, viewport);
-		device.queue.writeBuffer(this.#buffers.renderedImageStorage, 0, renderedImage);
+		this.#canvas.width = this.viewport[0];
+		this.#canvas.height = this.viewport[1];
 	}
 
 	render() {
-		const device = this.#device;
-		const computePipeline = this.#computePipeline;
-		const renderPipeline = this.#renderPipeline;
-		const bindGroup = this.#bindGroup;
 		const time = performance.now();
-
+		const computeBindGroup = this.computeBindGroup;
+		const computePipeline = this.computePipeline;
+		const renderBindGroup = this.renderBindGroup;
+		const renderPipeline = this.renderPipeline;
+		const device = this.device;
+		const context = this.context;
 		const encoder = device.createCommandEncoder();
 
 		const computePass = encoder.beginComputePass();
 		computePass.setPipeline(computePipeline);
-		computePass.setBindGroup(0, bindGroup);
-		computePass.dispatchWorkgroups(4, 4, 1);
+		computePass.setBindGroup(0, computeBindGroup);
+		computePass.dispatchWorkgroups(innerWidth * .125, innerHeight * .125, 1);
 		computePass.end();
 
 		const renderPass = encoder.beginRenderPass({
 			colorAttachments: [
 				{
-					view: this.#context.getCurrentTexture().createView(),
+					view: context.getCurrentTexture().createView(),
 					clearValue: Float32Array.of(0, 0, 0, 1),
 					loadOp: "clear",
 					storeOp: "store",
@@ -271,7 +219,7 @@ export class Renderer {
 			],
 		});
 		renderPass.setPipeline(renderPipeline);
-		renderPass.setBindGroup(0, bindGroup);
+		renderPass.setBindGroup(0, renderBindGroup);
 		renderPass.draw(6);
 		renderPass.end();
 
