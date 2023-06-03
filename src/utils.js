@@ -11,7 +11,11 @@ export function createBuffers(device, canvas) {
 				height: canvas.height,
 			},
 			format: "rgba8unorm",
-			usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUBufferUsage.COPY_DST,
+			usage: GPUTextureUsage.TEXTURE_BINDING | GPUBufferUsage.COPY_DST,
+		}),
+		camera: device.createBuffer({
+			size: 16 * 2,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
 	};
 }
@@ -33,9 +37,10 @@ export async function createShaderModule(device, path) {
  * @param {GPUDevice} device
  * @param {GPUShaderModule} computeShaderModule
  * @param {GPUTextureView} textureView
+ * @param {Object.<String, GPUBuffer>} buffers
  * @returns {Array}
  */
-export function createComputePipeline(device, computeShaderModule, textureView) {
+export function createComputePipeline(device, computeShaderModule, textureView, buffers) {
 	const computeBindGroupLayout = device.createBindGroupLayout({
 		entries: [
 			{
@@ -45,6 +50,12 @@ export function createComputePipeline(device, computeShaderModule, textureView) 
 					access: "write-only",
 					format: "rgba8unorm",
 					viewDimension: "2d",
+				},
+			}, {
+				binding: 10,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "uniform",
 				},
 			},
 		],
@@ -61,6 +72,11 @@ export function createComputePipeline(device, computeShaderModule, textureView) 
 				{
 					binding: 0,
 					resource: textureView,
+				}, {
+					binding: 10,
+					resource: {
+						buffer: buffers.camera,
+					},
 				},
 			],
 		}),
