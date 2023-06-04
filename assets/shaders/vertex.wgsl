@@ -1,10 +1,10 @@
 const VERTICES: array<vec2f, 6> = array<vec2f, 6>(
-	vec2f(-1, 1),
-	vec2f(1, 1),
-	vec2f(-1, -1),
-	vec2f(1, 1),
-	vec2f(1, -1),
-	vec2f(-1, -1),
+	vec2(-1,  1),
+	vec2( 1,  1),
+	vec2(-1, -1),
+	vec2( 1,  1),
+	vec2( 1, -1),
+	vec2(-1, -1),
 );
 
 struct VertexOutput {

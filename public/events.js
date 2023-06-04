@@ -1,7 +1,5 @@
 import {Vector2} from "src/math";
-import {camera, renderer} from "./main.js";
-
-export const keys = new Set();
+import {keys, camera, renderer} from "./main.js";
 
 export function listen() {
 	addEventListener("click", function({target}) {
@@ -32,7 +30,7 @@ function mousemove({movementX, movementY}) {
 	movement[0] = movementX;
 	movement[1] = movementY;
 
-	camera.look(movement);
+	camera.lookAt(movement);
 }
 
 const movement = new Vector2();

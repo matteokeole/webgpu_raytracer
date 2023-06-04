@@ -1,0 +1,51 @@
+/* Crosshair variables */
+:root {
+	/* The thickness and the spacing must be both odd or both even */
+	--crosshair-thickness: 1px;
+	--crosshair-spacing: 21px;
+	--crosshair-color: #ffd240;
+}
+
+#crosshair {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: var(--crosshair-spacing);
+	height: var(--crosshair-spacing);
+	margin: 0 auto;
+	position: relative;
+	mix-blend-mode: difference;
+	pointer-events: none;
+	z-index: 1;
+}
+#crosshair::before, #crosshair::after {
+	content: "";
+	box-sizing: border-box;
+	border-width: 0;
+	border-style: solid;
+	border-color: var(--crosshair-color);
+}
+
+/* Horizontal line (with center dot) */
+#crosshair::before {
+	--crosshair-thickness-half: calc(var(--crosshair-thickness) * .5);
+	width: 100%;
+	height: var(--crosshair-thickness);
+	position: absolute;
+	border-left-width: var(--crosshair-thickness);
+	border-right-width: var(--crosshair-thickness);
+	background: linear-gradient(
+		to right,
+		transparent calc(50% - var(--crosshair-thickness-half)),
+		var(--crosshair-color) calc((50% - var(--crosshair-thickness-half))), calc((50% + var(--crosshair-thickness-half))),
+		transparent calc(50% + var(--crosshair-thickness-half))
+	);
+}
+
+/* Vertical line */
+#crosshair::after {
+	width: var(--crosshair-thickness);
+	height: 100%;
+	border-top-width: var(--crosshair-thickness);
+	border-bottom-width: var(--crosshair-thickness);
+}

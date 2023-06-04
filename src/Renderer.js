@@ -8,7 +8,7 @@ export function Renderer() {
 	let textureView, textureSampler;
 	let computeBindGroup, computePipeline;
 	let renderBindGroup, renderPipeline;
-	let time = 0;
+	let time = 0, frameIndex = 0;
 
 	/** @type {?Camera} */
 	this.camera = null;
@@ -42,21 +42,21 @@ export function Renderer() {
 		});
 
 		const computeShaderModule = await createShaderModule(device, "assets/shaders/compute.wgsl");
-		[computeBindGroup, computePipeline] = createComputePipeline(device, computeShaderModule, textureView, buffers);
+		[computeBindGroup, computePipeline] = createComputePipeline(device, computeShaderModule, buffers, textureView);
 
 		const vertexShaderModule = await createShaderModule(device, "assets/shaders/vertex.wgsl");
 		const fragmentShaderModule = await createShaderModule(device, "assets/shaders/fragment.wgsl");
-		[renderBindGroup, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, textureSampler, textureView, format);
+		[renderBindGroup, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format);
 	};
 
 	this.render = function() {
 		time = performance.now();
+		frameIndex++;
 
-		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight)
+		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight);
 
-		device.queue.writeBuffer(buffers.camera, 0, Float32Array.of(...this.camera.position, 0, ...this.camera.direction));
-		// device.queue.writeBuffer(buffers.camera, 0, this.camera.position, 3);
-		// device.queue.writeBuffer(buffers.camera, 4, this.camera.direction, 3);
+		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
+		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(frameIndex));
 
 		const encoder = device.createCommandEncoder();
 
@@ -103,4 +103,6 @@ Renderer.prototype.resize = function(viewport) {
 
 	canvas.width = viewport[0];
 	canvas.height = viewport[1];
+
+	// TODO: Resize the texture
 };
