@@ -1,9 +1,7 @@
 @group(0) @binding(0) var texture_storage: texture_storage_2d<rgba8unorm, write>;
 // @group(0) @binding(1) var texture: texture_2d<f32>;
-// TODO: Scene buffer
-// @group(0) @binding(10) var<uniform> scene: array<Sphere>;
-// TODO: Materials buffer
-// @group(0) @binding(11) var<uniform> materials: array<Material>;
+@group(0) @binding(10) var<storage> objects: array<Sphere>;
+@group(0) @binding(11) var<storage> materials: array<Material>;
 @group(0) @binding(12) var<uniform> camera: Camera;
 @group(0) @binding(13) var<uniform> time: f32;
 
@@ -28,36 +26,13 @@ struct Hit {
 struct Sphere {
 	position: vec3f,
 	radius: f32,
+	materialIndex: u32,
+}
+
+struct Material {
 	albedo: vec3f,
 	roughness: f32,
 }
-
-const scene: array<Sphere, 4> = array(
-	Sphere(
-		vec3f(0, -11, 0),
-		10,
-		vec3f(0, 0, 0),
-		1,
-	),
-	Sphere(
-		vec3f(-3, -.42, 0),
-		1,
-		vec3f(1, 1, 1),
-		1,
-	),
-	Sphere(
-		vec3f(0, 0, 0),
-		1,
-		vec3f(1, 1, 1),
-		1,
-	),
-	Sphere(
-		vec3f(3, -.42, 0),
-		1,
-		vec3f(1, 1, 1),
-		1,
-	),
-);
 
 const INFINITY: f32 = 3.402823466e+38;
 const BOUNCES: u32 = 5;
@@ -90,20 +65,21 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 		}
 
 		let light: f32 = max(dot(hit.normal, -LIGHT_DIRECTION), 0);
-		let object: Sphere = scene[hit.objectIndex];
+		let object: Sphere = objects[hit.objectIndex];
+		let material: Material = materials[object.materialIndex];
 
-		color += object.albedo * light * multiplier;
+		color += material.albedo * light * multiplier;
 
 		multiplier *= .7;
 
 		ray.origin = hit.position + hit.normal * .0001;
 		ray.direction = reflect(
 			ray.direction,
-			hit.normal + random_vec(ray.direction, seed, time, -.5, .5) * object.roughness,
+			hit.normal + random_vec(ray.direction, seed, time, -.5, .5) * material.roughness,
 		);
 	}
 
-	// TODO: Accumulation by dividing by `time`
+	// TODO: Accumulate by dividing by `time`
 	textureStore(texture_storage, global_invocation_id.xy, vec4f(color, 1));
 }
 
@@ -111,8 +87,8 @@ fn trace(ray: Ray) -> Hit {
 	var closestT: f32 = INFINITY;
 	var objectIndex: i32 = -1;
 
-	for (var i: u32 = 0; i < 4; i = i + 1) {
-		let sphere: Sphere = scene[i];
+	for (var i: u32 = 0; i < arrayLength(&objects); i = i + 1) {
+		let sphere: Sphere = objects[i];
 
 		let origin: vec3f = ray.origin - sphere.position;
 
@@ -143,7 +119,7 @@ fn trace(ray: Ray) -> Hit {
 }
 
 fn closest_hit(ray: Ray, distance: f32, objectIndex: u32) -> Hit {
-	let object: Sphere = scene[objectIndex];
+	let object: Sphere = objects[objectIndex];
 	let origin: vec3f = ray.origin - object.position;
 
 	var hit: Hit;
@@ -182,7 +158,6 @@ fn random_f_inout(seed: u32) -> vec2f {
 
 fn random_vec(direction: vec3f, seed: u32, time: f32, min: f32, max: f32) -> vec3f {
 	let range: f32 = (max - min);
-
 	let rng1: vec2f = random_f_inout(seed);
 	let rng2: vec2f = random_f_inout(u32(rng1.y));
 	let rng3: vec2f = random_f_inout(u32(rng2.y));
@@ -194,11 +169,11 @@ fn random_vec(direction: vec3f, seed: u32, time: f32, min: f32, max: f32) -> vec
 	) * range + min;
 }
 
-fn noise3(p: vec3<f32>) -> f32 {
+fn noise3(p: vec3f) -> f32 {
 	let a = floor(p);
-	var d: vec3<f32> = p - a;
+	var d: vec3f = p - a;
 	d = d * d * (3. - 2. * d);
-	let b = a.xxyy + vec4<f32>(0., 1., 0., 1.);
+	let b = a.xxyy + vec4f(0., 1., 0., 1.);
 	let k1 = perm4(b.xyxy);
 	let k2 = perm4(k1.xyxy + b.zzww);
 	let c = k2 + a.zzzz;
@@ -212,10 +187,10 @@ fn noise3(p: vec3<f32>) -> f32 {
 	return o4.y * d.y + o4.x * (1. - d.y);
 }
 
-fn mod289(x: vec4<f32>) -> vec4<f32> {
+fn mod289(x: vec4f) -> vec4f {
 	return x - floor(x * (1. / 289.)) * 289.;
 }
 
-fn perm4(x: vec4<f32>) -> vec4<f32> {
+fn perm4(x: vec4f) -> vec4f {
 	return mod289(((x * 34.) + 1.) * x);
 }

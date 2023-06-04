@@ -1,3 +1,5 @@
+import {Material, Sphere} from "src";
+
 /**
  * @param {GPUDevice} device
  * @param {HTMLCanvasElement} canvas
@@ -16,6 +18,14 @@ export function createBuffers(device, canvas) {
 		camera: device.createBuffer({
 			size: 144,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		}),
+		objects: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * 4,
+			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		}),
+		materials: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * 2,
+			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		}),
 		time: device.createBuffer({
 			size: 4,
@@ -59,6 +69,18 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				visibility: GPUShaderStage.COMPUTE,
 				texture: {},
 			}, */ {
+				binding: 10,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "read-only-storage",
+				},
+			}, {
+				binding: 11,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "read-only-storage",
+				},
+			}, {
 				binding: 12,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
@@ -89,6 +111,16 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 					binding: 1,
 					resource: textureView,
 				}, */ {
+					binding: 10,
+					resource: {
+						buffer: buffers.objects,
+					},
+				}, {
+					binding: 11,
+					resource: {
+						buffer: buffers.materials,
+					},
+				}, {
 					binding: 12,
 					resource: {
 						buffer: buffers.camera,

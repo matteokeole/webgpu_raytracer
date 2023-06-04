@@ -1,4 +1,4 @@
-import {Camera} from "src";
+import {Camera, Scene} from "src";
 import {Vector2} from "src/math";
 import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "./utils.js";
 
@@ -9,6 +9,9 @@ export function Renderer() {
 	let computeBindGroup, computePipeline;
 	let renderBindGroup, renderPipeline;
 	let time = 0, frameIndex = 0;
+
+	/** @type {?Scene} */
+	this.scene = null;
 
 	/** @type {?Camera} */
 	this.camera = null;
@@ -55,6 +58,8 @@ export function Renderer() {
 
 		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight);
 
+		device.queue.writeBuffer(buffers.objects, 0, this.scene.toObjectBuffer());
+		device.queue.writeBuffer(buffers.materials, 0, this.scene.toMaterialBuffer());
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
 		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(frameIndex));
 
