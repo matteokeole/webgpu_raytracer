@@ -50,6 +50,8 @@ export function Renderer() {
 		const vertexShaderModule = await createShaderModule(device, "assets/shaders/vertex.wgsl");
 		const fragmentShaderModule = await createShaderModule(device, "assets/shaders/fragment.wgsl");
 		[renderBindGroup, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format);
+
+		device.queue.writeBuffer(buffers.accumulationStorage, 0, new Float32Array(canvas.width * canvas.height * 4));
 	};
 
 	this.render = function() {

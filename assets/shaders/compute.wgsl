@@ -1,5 +1,6 @@
 @group(0) @binding(0) var texture_storage: texture_storage_2d<rgba8unorm, write>;
 // @group(0) @binding(1) var texture: texture_2d<f32>;
+@group(0) @binding(2) var<storage, read_write> accumulation: array<vec4f>;
 @group(0) @binding(10) var<storage> objects: array<Sphere>;
 @group(0) @binding(11) var<storage> materials: array<Material>;
 @group(0) @binding(12) var<uniform> camera: Camera;
@@ -36,15 +37,15 @@ struct Material {
 
 const INFINITY: f32 = 3.402823466e+38;
 const BOUNCES: u32 = 5;
-const LIGHT_DIRECTION: vec3f = normalize(vec3f(-1, -1, 1));
-const BACKGROUND_COLOR: vec3f = vec3f(.6, .7, .9);
+const LIGHT_DIRECTION: vec3f = normalize(vec3f(-1, -.7, -.7));
+const BACKGROUND_COLOR: vec3f = vec3f(.1, .1, .1);
 
 @compute
 @workgroup_size(1, 1, 1)
 fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let id: vec2f = vec2f(f32(global_invocation_id.x), f32(global_invocation_id.y));
 	let viewport: vec2f = vec2f(textureDimensions(texture_storage));
-	let uv: vec2f = (id / viewport * 2 - 1) * vec2f(1, -1);
+	let uv: vec2f = (id / viewport * 2 - 1) * vec2f(1, 1);
 	let position: vec4f = vec4f((camera.projection_inverse * vec4f(uv, 0, 1)).xyz, 0);
 	let seed: u32 = get_seed(id, viewport);
 
@@ -79,8 +80,8 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 		);
 	}
 
-	// TODO: Accumulate by dividing by `time`
-	textureStore(texture_storage, global_invocation_id.xy, vec4f(color, 1));
+	// textureStore(texture_storage, global_invocation_id.xy, vec4f(color, 1));
+	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] += vec4f(color, 1);
 }
 
 fn trace(ray: Ray) -> Hit {

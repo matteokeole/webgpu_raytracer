@@ -29,7 +29,7 @@ export function init(scene) {
 	scene.materials = [
 		new Material(
 			new Vector3(0, 0, 0),
-			1,
+			.1,
 		),
 		new Material(
 			new Vector3(1, 1, 1),

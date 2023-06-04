@@ -15,6 +15,10 @@ export function createBuffers(device, canvas) {
 			format: "rgba8unorm",
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUBufferUsage.COPY_DST,
 		}),
+		accumulationStorage: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT * canvas.width * canvas.height * 4,
+			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		}),
 		camera: device.createBuffer({
 			size: 144,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -69,6 +73,12 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				visibility: GPUShaderStage.COMPUTE,
 				texture: {},
 			}, */ {
+				binding: 2,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "storage",
+				},
+			}, {
 				binding: 10,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
@@ -111,6 +121,11 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 					binding: 1,
 					resource: textureView,
 				}, */ {
+					binding: 2,
+					resource: {
+						buffer: buffers.accumulationStorage,
+					},
+				}, {
 					binding: 10,
 					resource: {
 						buffer: buffers.objects,
@@ -164,6 +179,18 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 				binding: 1,
 				visibility: GPUShaderStage.FRAGMENT,
 				sampler: {},
+			}, {
+				binding: 2,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "read-only-storage",
+				},
+			}, {
+				binding: 13,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "uniform",
+				},
 			},
 		],
 	});
@@ -182,6 +209,16 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 				}, {
 					binding: 1,
 					resource: textureSampler,
+				}, {
+					binding: 2,
+					resource: {
+						buffer: buffers.accumulationStorage,
+					},
+				}, {
+					binding: 13,
+					resource: {
+						buffer: buffers.time,
+					},
 				},
 			],
 		}),
