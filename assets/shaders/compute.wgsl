@@ -41,7 +41,7 @@ const LIGHT_DIRECTION: vec3f = normalize(vec3f(-1, -.7, -.7));
 const BACKGROUND_COLOR: vec3f = vec3f(.1, .1, .1);
 
 @compute
-@workgroup_size(1, 1, 1)
+@workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let id: vec2f = vec2f(f32(global_invocation_id.x), f32(global_invocation_id.y));
 	let viewport: vec2f = vec2f(textureDimensions(texture_storage));
@@ -81,7 +81,7 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	}
 
 	// textureStore(texture_storage, global_invocation_id.xy, vec4f(color, 1));
-	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] += vec4f(color, 1);
+	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] = vec4f(color, 1);
 }
 
 fn trace(ray: Ray) -> Hit {

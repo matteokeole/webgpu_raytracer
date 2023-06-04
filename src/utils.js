@@ -35,6 +35,10 @@ export function createBuffers(device, canvas) {
 			size: 4,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
+		viewport: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT * 2,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		}),
 	};
 }
 
@@ -191,6 +195,12 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 				buffer: {
 					type: "uniform",
 				},
+			}, {
+				binding: 14,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "uniform",
+				},
 			},
 		],
 	});
@@ -218,6 +228,11 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 					binding: 13,
 					resource: {
 						buffer: buffers.time,
+					},
+				}, {
+					binding: 14,
+					resource: {
+						buffer: buffers.viewport,
 					},
 				},
 			],
