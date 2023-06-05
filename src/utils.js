@@ -3,9 +3,11 @@ import {Material, Sphere} from "src";
 /**
  * @param {GPUDevice} device
  * @param {HTMLCanvasElement} canvas
+ * @param {Number} objectLength
+ * @param {Number} materialLength
  * @returns {Object.<String, GPUBuffer>}
  */
-export function createBuffers(device, canvas) {
+export function createBuffers(device, canvas, objectLength, materialLength) {
 	return {
 		textureStorage: device.createTexture({
 			size: {
@@ -24,15 +26,17 @@ export function createBuffers(device, canvas) {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
 		objects: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * 4,
+			size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * objectLength,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			mappedAtCreation: true,
 		}),
 		materials: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * 2,
+			size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * materialLength,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			mappedAtCreation: true,
 		}),
 		time: device.createBuffer({
-			size: 4,
+			size: Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
 		viewport: device.createBuffer({

@@ -37,8 +37,8 @@ struct Material {
 
 const INFINITY: f32 = 3.402823466e+38;
 const BOUNCES: u32 = 5;
-const LIGHT_DIRECTION: vec3f = normalize(vec3f(-1, -.7, -.7));
-const BACKGROUND_COLOR: vec3f = vec3f(.1, .1, .1);
+const LIGHT_DIRECTION: vec3f = normalize(vec3f(0, 0, -1));
+const BACKGROUND_COLOR: vec3f = vec3f();
 
 @compute
 @workgroup_size(8, 8, 1)
@@ -50,7 +50,7 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let seed: u32 = get_seed(id, viewport);
 
 	var color: vec3f;
-	var multiplier: f32 = 1; // TODO: Remove?
+	var multiplier: f32 = 10; // TODO: Remove?
 
 	var ray: Ray;
 	ray.origin = camera.position;
@@ -81,7 +81,7 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	}
 
 	// textureStore(texture_storage, global_invocation_id.xy, vec4f(color, 1));
-	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] = vec4f(color, 1);
+	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] += vec4f(color, 1);
 }
 
 fn trace(ray: Ray) -> Hit {

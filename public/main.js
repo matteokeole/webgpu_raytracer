@@ -15,6 +15,8 @@ export const scene = new Scene();
 export const camera = new Camera(FIELD_OF_VIEW, ASPECT_RATIO, NEAR, FAR);
 export const keys = new Set();
 
+init(scene);
+
 camera.position = camera.target = new Vector3(0, 0, -6);
 
 renderer.scene = scene;
@@ -26,5 +28,4 @@ await renderer.build();
 document.body.firstElementChild.appendChild(renderer.getCanvas());
 
 listen();
-init(scene);
 start();

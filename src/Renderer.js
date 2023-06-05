@@ -32,7 +32,7 @@ export function Renderer() {
 
 		context.configure({device, format});
 
-		buffers = createBuffers(device, canvas);
+		buffers = createBuffers(device, canvas, this.scene.objects.length, this.scene.materials.length);
 
 		textureView = buffers.textureStorage.createView();
 		textureSampler = device.createSampler({
@@ -52,6 +52,12 @@ export function Renderer() {
 		[renderBindGroup, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format);
 
 		device.queue.writeBuffer(buffers.accumulationStorage, 0, new Float32Array(canvas.width * canvas.height * 4));
+
+		new Float32Array(buffers.objects.getMappedRange()).set(this.scene.toObjectBuffer());
+		buffers.objects.unmap();
+
+		new Float32Array(buffers.materials.getMappedRange()).set(this.scene.toMaterialBuffer());
+		buffers.materials.unmap();
 	};
 
 	this.render = function() {
@@ -61,7 +67,6 @@ export function Renderer() {
 		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(8);
 
 		device.queue.writeBuffer(buffers.objects, 0, this.scene.toObjectBuffer());
-		device.queue.writeBuffer(buffers.materials, 0, this.scene.toMaterialBuffer());
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
 		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(frameIndex));
 		device.queue.writeBuffer(buffers.viewport, 0, Uint32Array.of(canvas.clientWidth, canvas.clientHeight));

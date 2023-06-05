@@ -17,7 +17,7 @@ export function init(scene) {
 		new Sphere(
 			new Vector3(0, 0, 0),
 			1,
-			1,
+			2,
 		),
 		new Sphere(
 			new Vector3(3, -.42, 0),
@@ -29,11 +29,11 @@ export function init(scene) {
 	scene.materials = [
 		new Material(
 			new Vector3(0, 0, 0),
-			.1,
+			1,
 		),
 		new Material(
 			new Vector3(1, 1, 1),
-			1,
+			0,
 		),
 	];
 }

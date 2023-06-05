@@ -9,6 +9,6 @@ fn main(@builtin(position) position: vec4f) -> @location(0) vec4f {
 	let uv: vec2u = vec2u(u32(position.x), u32(position.y));
 	let index: u32 = uv.x + uv.y * viewport.x;
 
-	return accumulation[index];
 	// return textureSample(texture, texture_sampler, uv);
+	return accumulation[index] / time;
 }
