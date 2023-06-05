@@ -15,12 +15,6 @@ export class Renderer {
 
 	/**
 	 * @private
-	 * @type {?GPUAdapter}
-	 */
-	#adapter;
-
-	/**
-	 * @private
 	 * @type {?GPUDevice}
 	 */
 	#device;
@@ -91,7 +85,7 @@ export class Renderer {
 	async build() {
 		if (navigator.gpu == null) throw "WebGPU not supported.";
 
-		const adapter = this.#adapter = await navigator.gpu.requestAdapter();
+		const adapter = await navigator.gpu.requestAdapter();
 
 		if (adapter == null) throw "Couldn't request WebGPU adapter.";
 
@@ -168,9 +162,14 @@ export class Renderer {
 				code: await (await fetch("assets/shaders/compute.wgsl")).text(),
 			});
 
-			const renderShaderModule = device.createShaderModule({
+			const vertexShaderModule = device.createShaderModule({
 				label: "Render shader module",
-				code: await (await fetch("assets/shaders/render.wgsl")).text(),
+				code: await (await fetch("assets/shaders/vertex.wgsl")).text(),
+			});
+
+			const fragmentShaderModule = device.createShaderModule({
+				label: "Render shader module",
+				code: await (await fetch("assets/shaders/fragment.wgsl")).text(),
 			});
 
 			const pipelineLayout = device.createPipelineLayout({
@@ -183,7 +182,7 @@ export class Renderer {
 				layout: pipelineLayout,
 				compute: {
 					module: computeShaderModule,
-					entryPoint: "compute",
+					entryPoint: "main",
 				},
 			});
 
@@ -191,8 +190,8 @@ export class Renderer {
 				label: "Render pipeline",
 				layout: pipelineLayout,
 				vertex: {
-					module: renderShaderModule,
-					entryPoint: "vertex",
+					module: vertexShaderModule,
+					entryPoint: "main",
 					buffers: [{
 						arrayStride: 8,
 						attributes: [{
@@ -203,8 +202,8 @@ export class Renderer {
 					}],
 				},
 				fragment: {
-					module: renderShaderModule,
-					entryPoint: "fragment",
+					module: fragmentShaderModule,
+					entryPoint: "main",
 					targets: [{
 						format: preferredFormat,
 					}],
