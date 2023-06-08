@@ -37,7 +37,7 @@ struct Material {
 
 const INFINITY: f32 = 3.402823466e+38;
 const BOUNCES: u32 = 5;
-const LIGHT_DIRECTION: vec3f = normalize(vec3f(0, 0, -1));
+const LIGHT_DIRECTION: vec3f = normalize(vec3f(0, -.9, 1.2));
 const BACKGROUND_COLOR: vec3f = vec3f();
 
 @compute

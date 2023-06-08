@@ -66,27 +66,14 @@ export function Camera(fov, aspect, near, far) {
 	}
 
 	this.project = function() {
-		projectionInverse = new Matrix4(
-			f / this.aspect, 0, 0, 0,
-			0, -f, 0, 0,
-			0, 0, far / (near - far), 1,
-			0, 0, (far * near) / (near - far), 0,
-		).invert();
+		projectionInverse = Matrix4.perspective(fov, this.aspect, near, far).invert();
 	};
 
 	this.view = function() {
-		const eye = this.position.clone();
-		const target = eye.clone().add(forward);
-
-		const z = target.subtract(eye).normalize();
-		const x = up.cross(z).normalize();
-		const y = z.cross(x);
-
-		viewInverse = new Matrix4(
-			x[0], y[0], z[0], 0,
-			x[1], y[1], z[1], 0,
-			x[2], y[2], z[2], 0,
-			-x.dot(eye), -y.dot(eye), -z.dot(eye), 1,
+		viewInverse = Matrix4.lookAt(
+			this.position,
+			this.position.clone().add(forward),
+			up,
 		).invert();
 	};
 
