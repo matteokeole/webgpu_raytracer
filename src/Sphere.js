@@ -16,8 +16,8 @@ Sphere.BUFFER_SIZE = 8;
 Sphere.prototype.toBuffer = function() {
 	const buffer = new Float32Array(Sphere.BUFFER_SIZE);
 	buffer.set(this.position);
-	buffer[3] = this.radius;
-	buffer[4] = this.materialIndex;
+	buffer[4] = this.radius;
+	buffer[5] = this.materialIndex;
 
 	return buffer;
 };

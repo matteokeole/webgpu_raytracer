@@ -8,7 +8,7 @@ export function Renderer() {
 	let textureView, textureSampler;
 	let computeBindGroup, computePipeline;
 	let renderBindGroup, renderPipeline;
-	let time = 0, frameIndex = 0;
+	let renderTime = 0, time = 0, frameIndex = 0;
 
 	/** @type {?Scene} */
 	this.scene = null;
@@ -60,15 +60,24 @@ export function Renderer() {
 		buffers.materials.unmap();
 	};
 
-	this.render = function() {
-		time = performance.now();
-		frameIndex++;
+	/** @param {Boolean} update */
+	this.render = function(update) {
+		renderTime = performance.now();
+		time++;
 
-		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(8);
+		if (update) {
+			frameIndex = 0;
+		} else {
+			frameIndex++;
+		}
 
-		device.queue.writeBuffer(buffers.objects, 0, this.scene.toObjectBuffer());
+		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(16);
+
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
-		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(frameIndex));
+		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(time));
+
+		device.queue.writeBuffer(buffers.frameIndex, 0, Float32Array.of(frameIndex));
+		device.queue.writeBuffer(buffers.update, 0, Uint32Array.of(update));
 		device.queue.writeBuffer(buffers.viewport, 0, Uint32Array.of(canvas.clientWidth, canvas.clientHeight));
 
 		const encoder = device.createCommandEncoder();
@@ -97,7 +106,7 @@ export function Renderer() {
 
 		device.queue.submit([encoder.finish()]);
 
-		window["debug-render-time"].textContent = `${(performance.now() - time).toFixed(3)}ms`;
+		window["debug-render-time"].textContent = `${(performance.now() - renderTime).toFixed(3)}ms`;
 	};
 }
 

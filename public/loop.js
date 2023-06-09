@@ -23,8 +23,9 @@ function loop() {
 	then = now;
 
 	try {
-		update(delta);
-		render();
+		const needsUpdate = update(delta);
+
+		render(needsUpdate);
 	} catch (error) {
 		cancelAnimationFrame(request);
 

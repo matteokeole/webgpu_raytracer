@@ -39,6 +39,14 @@ export function createBuffers(device, canvas, objectLength, materialLength) {
 			size: Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
+		frameIndex: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		}),
+		update: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		}),
 		viewport: device.createBuffer({
 			size: Float32Array.BYTES_PER_ELEMENT * 2,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -110,6 +118,12 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				buffer: {
 					type: "uniform",
 				},
+			}, {
+				binding: 14,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "uniform",
+				},
 			},
 		],
 	});
@@ -152,6 +166,11 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 					binding: 13,
 					resource: {
 						buffer: buffers.time,
+					},
+				}, {
+					binding: 14,
+					resource: {
+						buffer: buffers.update,
 					},
 				},
 			],
@@ -205,6 +224,12 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 				buffer: {
 					type: "uniform",
 				},
+			}, {
+				binding: 20,
+				visibility: GPUShaderStage.FRAGMENT,
+				buffer: {
+					type: "uniform",
+				},
 			},
 		],
 	});
@@ -231,10 +256,15 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 				}, {
 					binding: 13,
 					resource: {
-						buffer: buffers.time,
+						buffer: buffers.frameIndex,
 					},
 				}, {
 					binding: 14,
+					resource: {
+						buffer: buffers.update,
+					},
+				}, {
+					binding: 20,
 					resource: {
 						buffer: buffers.viewport,
 					},

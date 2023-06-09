@@ -5,6 +5,7 @@
 @group(0) @binding(11) var<storage> materials: array<Material>;
 @group(0) @binding(12) var<uniform> camera: Camera;
 @group(0) @binding(13) var<uniform> time: f32;
+@group(0) @binding(14) var<uniform> update: u32;
 
 struct Camera {
 	projection_inverse: mat4x4f,
@@ -25,23 +26,24 @@ struct Hit {
 }
 
 struct Sphere {
-	position: vec3f,
+	@size(16) position: vec3f,
 	radius: f32,
-	materialIndex: u32,
+	materialIndex: f32,
 }
 
 struct Material {
-	albedo: vec3f,
+	@size(16) albedo: vec3f,
+	@size(16) emissionColor: vec3f,
 	roughness: f32,
+	emissionStrength: f32,
 }
 
 const INFINITY: f32 = 3.402823466e+38;
 const BOUNCES: u32 = 5;
-const LIGHT_DIRECTION: vec3f = normalize(vec3f(0, -.9, 1.2));
 const BACKGROUND_COLOR: vec3f = vec3f();
 
 @compute
-@workgroup_size(8, 8, 1)
+@workgroup_size(16, 16, 1)
 fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let id: vec2f = vec2f(f32(global_invocation_id.x), f32(global_invocation_id.y));
 	let viewport: vec2f = vec2f(textureDimensions(texture_storage));
@@ -49,8 +51,8 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let position: vec4f = vec4f((camera.projection_inverse * vec4f(uv, 0, 1)).xyz, 0);
 	let seed: u32 = get_seed(id, viewport);
 
-	var color: vec3f;
-	var multiplier: f32 = 10; // TODO: Remove?
+	var light: vec3f;
+	var throughput: vec3f = vec3f(1);
 
 	var ray: Ray;
 	ray.origin = camera.position;
@@ -60,28 +62,27 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 		let hit: Hit = trace(ray);
 
 		if (hit.distance < 0) {
-			color += BACKGROUND_COLOR * multiplier;
+			light += BACKGROUND_COLOR * throughput;
 
 			break;
 		}
 
-		let light: f32 = max(dot(hit.normal, -LIGHT_DIRECTION), 0);
 		let object: Sphere = objects[hit.objectIndex];
-		let material: Material = materials[object.materialIndex];
+		let material: Material = materials[u32(object.materialIndex)];
 
-		color += material.albedo * light * multiplier;
-
-		multiplier *= .7;
+		throughput *= material.albedo;
+		light += material.emissionColor * material.emissionStrength;
 
 		ray.origin = hit.position + hit.normal * .0001;
-		ray.direction = reflect(
-			ray.direction,
-			hit.normal + random_vec(ray.direction, seed, time, -.5, .5) * material.roughness,
-		);
+		ray.direction = normalize(hit.normal + normalize(random_vec(ray.direction, seed, time, -1, 1)));
 	}
 
-	// textureStore(texture_storage, global_invocation_id.xy, vec4f(color, 1));
-	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] += vec4f(color, 1);
+	if (update == 1) {
+		// textureStore(texture_storage, global_invocation_id.xy, vec4f(light, 1));
+		accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] = vec4f(light, 1);
+	} else {
+		accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] += vec4f(light, 1);
+	}
 }
 
 fn trace(ray: Ray) -> Hit {

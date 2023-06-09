@@ -20,8 +20,6 @@ export function Camera(fov, aspect, near, far) {
 
 	fov = fov * PI / 180;
 
-	const f = 1 / Math.tan(fov * .5);
-
 	/** @returns {?Matrix4} */
 	this.getProjectionInverse = () => projectionInverse;
 
@@ -57,19 +55,8 @@ export function Camera(fov, aspect, near, far) {
 		up = forward.cross(right);
 	};
 
-	function sphericalToCartesian(yaw, pitch) {
-		return new Vector3(
-			Math.cos(pitch) * Math.sin(yaw),
-			Math.sin(pitch),
-			Math.cos(pitch) * Math.cos(yaw),
-		);
-	}
-
-	this.project = function() {
+	this.update = function() {
 		projectionInverse = Matrix4.perspective(fov, this.aspect, near, far).invert();
-	};
-
-	this.view = function() {
 		viewInverse = Matrix4.lookAt(
 			this.position,
 			this.position.clone().add(forward),
@@ -91,7 +78,7 @@ export function Camera(fov, aspect, near, far) {
 Camera.TURN_VELOCITY = .001;
 
 /** @type {Number} */
-Camera.LERP_FACTOR = .95;
+Camera.LERP_FACTOR = 0 /* .95 */;
 
 /** @type {Vector3} */
 Camera.UP = new Vector3(0, 1, 0);
@@ -128,3 +115,9 @@ Camera.prototype.moveZ = function(z) {
 
 	this.target.add(newForward.multiplyScalar(z));
 };
+
+const sphericalToCartesian = (yaw, pitch) => new Vector3(
+	Math.cos(pitch) * Math.sin(yaw),
+	Math.sin(pitch),
+	Math.cos(pitch) * Math.cos(yaw),
+);
