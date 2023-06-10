@@ -5,24 +5,19 @@ import {Vector3} from "src/math";
 export function init(scene) {
 	scene.objects = [
 		new Sphere(
-			new Vector3(0, -11, 0),
-			10,
+			new Vector3(0, -101, 0),
+			100,
 			1,
-		),
-		new Sphere(
-			new Vector3(-3, -.42, 0),
-			1,
-			0,
 		),
 		new Sphere(
 			new Vector3(0, 0, 0),
 			1,
-			2,
+			0,
 		),
 		new Sphere(
-			new Vector3(3, -.42, 0),
-			1,
-			0,
+			new Vector3(140, -4, 140),
+			100,
+			2,
 		),
 	];
 
@@ -42,8 +37,8 @@ export function init(scene) {
 		new Material(
 			new Vector3(1, 1, 1),
 			0,
-			new Vector3(1, 1, 1),
-			1,
+			new Vector3(.99, .94, .71),
+			10,
 		),
 	];
 }

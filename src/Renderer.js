@@ -60,24 +60,25 @@ export function Renderer() {
 		buffers.materials.unmap();
 	};
 
-	/** @param {Boolean} update */
-	this.render = function(update) {
+	/** @param {Boolean} accumulate */
+	this.render = function(accumulate) {
 		renderTime = performance.now();
 		time++;
 
-		if (update) {
-			frameIndex = 0;
-		} else {
+		if (accumulate) {
 			frameIndex++;
+		} else {
+			frameIndex = 0;
 		}
 
-		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(16);
+		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(8);
+		const offset = (Math.random() * 4294967295) | 0;
 
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
 		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(time));
-
+		device.queue.writeBuffer(buffers.offset, 0, Uint32Array.of(offset));
 		device.queue.writeBuffer(buffers.frameIndex, 0, Float32Array.of(frameIndex));
-		device.queue.writeBuffer(buffers.update, 0, Uint32Array.of(update));
+		device.queue.writeBuffer(buffers.accumulate, 0, Uint32Array.of(accumulate));
 		device.queue.writeBuffer(buffers.viewport, 0, Uint32Array.of(canvas.clientWidth, canvas.clientHeight));
 
 		const encoder = device.createCommandEncoder();

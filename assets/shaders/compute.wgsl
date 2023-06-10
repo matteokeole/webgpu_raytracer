@@ -5,7 +5,8 @@
 @group(0) @binding(11) var<storage> materials: array<Material>;
 @group(0) @binding(12) var<uniform> camera: Camera;
 @group(0) @binding(13) var<uniform> time: f32;
-@group(0) @binding(14) var<uniform> update: u32;
+@group(0) @binding(14) var<uniform> offset: u32;
+@group(0) @binding(15) var<uniform> accumulate: u32;
 
 struct Camera {
 	projection_inverse: mat4x4f,
@@ -42,14 +43,18 @@ const INFINITY: f32 = 3.402823466e+38;
 const BOUNCES: u32 = 5;
 const BACKGROUND_COLOR: vec3f = vec3f();
 
+var<private> state: u32;
+
 @compute
-@workgroup_size(16, 16, 1)
+@workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let id: vec2f = vec2f(f32(global_invocation_id.x), f32(global_invocation_id.y));
 	let viewport: vec2f = vec2f(textureDimensions(texture_storage));
 	let uv: vec2f = (id / viewport * 2 - 1) * vec2f(1, 1);
 	let position: vec4f = vec4f((camera.projection_inverse * vec4f(uv, 0, 1)).xyz, 0);
 	let seed: u32 = get_seed(id, viewport);
+
+	// let newSeed: u32 = global_invocation_id.x + global_invocation_id.y * viewport.x + offset;
 
 	var light: vec3f;
 	var throughput: vec3f = vec3f(1);
@@ -77,19 +82,29 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 		ray.direction = normalize(hit.normal + normalize(random_vec(ray.direction, seed, time, -1, 1)));
 	}
 
-	if (update == 1) {
+	if (accumulate == 0) {
 		// textureStore(texture_storage, global_invocation_id.xy, vec4f(light, 1));
 		accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] = vec4f(light, 1);
 	} else {
 		accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] += vec4f(light, 1);
 	}
+
+	/* let id: vec2f = vec2f(f32(global_invocation_id.x), f32(global_invocation_id.y));
+	let viewport: vec2u = textureDimensions(texture_storage);
+	// let uv: vec2f = (id / viewport * 2 - 1) * vec2f(1, 1);
+	var seed = u32(viewport.x * global_invocation_id.y + global_invocation_id.x) + offset;
+    var pcg = pcg_hash(seed);
+    var v = f32(pcg) * (1.0 / 4294967295.0);
+    // return vec4<f32>(v, v, v, 1.0);
+
+	accumulation[global_invocation_id.x + global_invocation_id.y * u32(viewport.x)] = vec4f(v, v, v, 1); */
 }
 
 fn trace(ray: Ray) -> Hit {
 	var closestT: f32 = INFINITY;
 	var objectIndex: i32 = -1;
 
-	for (var i: u32 = 0; i < arrayLength(&objects); i = i + 1) {
+	for (var i: u32; i < arrayLength(&objects); i++) {
 		let sphere: Sphere = objects[i];
 
 		let origin: vec3f = ray.origin - sphere.position;
@@ -114,13 +129,13 @@ fn trace(ray: Ray) -> Hit {
 	}
 
 	if (objectIndex < 0) {
-		return miss(ray);
+		return rmiss(ray);
 	}
 
-	return closest_hit(ray, closestT, u32(objectIndex));
+	return rchit(ray, closestT, u32(objectIndex));
 }
 
-fn closest_hit(ray: Ray, distance: f32, objectIndex: u32) -> Hit {
+fn rchit(ray: Ray, distance: f32, objectIndex: u32) -> Hit {
 	let object: Sphere = objects[objectIndex];
 	let origin: vec3f = ray.origin - object.position;
 
@@ -135,7 +150,7 @@ fn closest_hit(ray: Ray, distance: f32, objectIndex: u32) -> Hit {
 	return hit;
 }
 
-fn miss(ray: Ray) -> Hit {
+fn rmiss(ray: Ray) -> Hit {
 	var hit: Hit;
 
 	hit.distance = -1;
@@ -195,4 +210,10 @@ fn mod289(x: vec4f) -> vec4f {
 
 fn perm4(x: vec4f) -> vec4f {
 	return mod289(((x * 34.) + 1.) * x);
+}
+
+fn pcg_hash(input: u32) -> u32 {
+	state = input * 747796405u + 2891336453u;
+	var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
 }
