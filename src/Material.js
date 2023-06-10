@@ -1,12 +1,13 @@
 import {Vector3} from "src/math";
 
 /**
- * @param {Vector3} albedo
- * @param {Number} roughness
- * @param {Vector3} emissionColor
- * @param {Number} emissionStrength
+ * @param {Object} options
+ * @param {Vector3} options.albedo
+ * @param {Number} options.roughness
+ * @param {Vector3} options.emissionColor
+ * @param {Number} options.emissionStrength
  */
-export function Material(albedo, roughness, emissionColor, emissionStrength) {
+export function Material({albedo, roughness, emissionColor, emissionStrength}) {
 	this.albedo = albedo;
 	this.roughness = roughness;
 	this.emissionColor = emissionColor;

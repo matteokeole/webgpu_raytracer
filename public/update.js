@@ -42,7 +42,7 @@ export function update(delta) {
 
 	if (!equals(prevDirection, camera.getForward())) accumulate = false;
 
-	prevDirection = camera.getForward().clone();
+	prevDirection = camera.getForward();
 
 	window["debug-position"].textContent = [...camera.position].map(e => e.toFixed(2)).join(' ');
 	window["debug-rotation"].textContent = [...camera.rotation].map(e => e.toFixed(2)).join(' ');

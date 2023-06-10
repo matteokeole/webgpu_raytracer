@@ -1,9 +1,10 @@
 /**
- * @param {Vector3} position
- * @param {Number} radius
- * @param {Number} materialIndex
+ * @param {Object} options
+ * @param {Vector3} options.position
+ * @param {Number} options.radius
+ * @param {Number} options.materialIndex
  */
-export function Sphere(position, radius, materialIndex) {
+export function Sphere({position, radius, materialIndex}) {
 	this.position = position;
 	this.radius = radius;
 	this.materialIndex = materialIndex;

@@ -25,6 +25,10 @@ export function createBuffers(device, canvas, objectLength, materialLength) {
 			size: 144,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
+		backgroundColor: device.createBuffer({
+			size: Float32Array.BYTES_PER_ELEMENT * 3,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		}),
 		objects: device.createBuffer({
 			size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * objectLength,
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -35,24 +39,20 @@ export function createBuffers(device, canvas, objectLength, materialLength) {
 			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			mappedAtCreation: true,
 		}),
-		time: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT,
+		accumulate: device.createBuffer({
+			size: Uint32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
 		offset: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT,
+			size: Uint32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
 		frameIndex: device.createBuffer({
 			size: Float32Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
-		accumulate: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
 		viewport: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * 2,
+			size: Uint32Array.BYTES_PER_ELEMENT * 2,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		}),
 	};
@@ -88,11 +88,7 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 					format: "rgba8unorm",
 					viewDimension: "2d",
 				},
-			}, /* {
-				binding: 1,
-				visibility: GPUShaderStage.COMPUTE,
-				texture: {},
-			}, */ {
+			}, {
 				binding: 2,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
@@ -102,34 +98,40 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				binding: 10,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
-					type: "read-only-storage",
+					type: "uniform",
 				},
 			}, {
 				binding: 11,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
-					type: "read-only-storage",
+					type: "uniform",
 				},
 			}, {
 				binding: 12,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
-					type: "uniform",
+					type: "read-only-storage",
 				},
 			}, {
 				binding: 13,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
-					type: "uniform",
+					type: "read-only-storage",
 				},
 			}, {
-				binding: 14,
+				binding: 20,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
 					type: "uniform",
 				},
 			}, {
-				binding: 15,
+				binding: 21,
+				visibility: GPUShaderStage.COMPUTE,
+				buffer: {
+					type: "uniform",
+				},
+			}, {
+				binding: 22,
 				visibility: GPUShaderStage.COMPUTE,
 				buffer: {
 					type: "uniform",
@@ -149,10 +151,7 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				{
 					binding: 0,
 					resource: textureView,
-				}, /* {
-					binding: 1,
-					resource: textureView,
-				}, */ {
+				}, {
 					binding: 2,
 					resource: {
 						buffer: buffers.accumulationStorage,
@@ -160,32 +159,37 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				}, {
 					binding: 10,
 					resource: {
-						buffer: buffers.objects,
+						buffer: buffers.camera,
 					},
 				}, {
 					binding: 11,
 					resource: {
-						buffer: buffers.materials,
+						buffer: buffers.backgroundColor,
 					},
 				}, {
 					binding: 12,
 					resource: {
-						buffer: buffers.camera,
+						buffer: buffers.objects,
 					},
 				}, {
 					binding: 13,
 					resource: {
-						buffer: buffers.time,
+						buffer: buffers.materials,
 					},
 				}, {
-					binding: 14,
+					binding: 20,
+					resource: {
+						buffer: buffers.accumulate,
+					},
+				}, {
+					binding: 21,
 					resource: {
 						buffer: buffers.offset,
 					},
 				}, {
-					binding: 15,
+					binding: 22,
 					resource: {
-						buffer: buffers.accumulate,
+						buffer: buffers.frameIndex,
 					},
 				},
 			],
@@ -228,13 +232,13 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 					type: "read-only-storage",
 				},
 			}, {
-				binding: 13,
+				binding: 10,
 				visibility: GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
 				},
 			}, {
-				binding: 14,
+				binding: 11,
 				visibility: GPUShaderStage.FRAGMENT,
 				buffer: {
 					type: "uniform",
@@ -269,14 +273,14 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 						buffer: buffers.accumulationStorage,
 					},
 				}, {
-					binding: 13,
-					resource: {
-						buffer: buffers.frameIndex,
-					},
-				}, {
-					binding: 14,
+					binding: 10,
 					resource: {
 						buffer: buffers.accumulate,
+					},
+				}, {
+					binding: 11,
+					resource: {
+						buffer: buffers.frameIndex,
 					},
 				}, {
 					binding: 20,

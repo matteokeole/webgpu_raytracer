@@ -1,6 +1,10 @@
 import {Material, Sphere} from "src";
+import {Vector3} from "src/math";
 
 export function Scene() {
+	/** @type {Vector3} */
+	this.backgroundColor = new Vector3();
+
 	/** @type {Set.<Sphere>} */
 	this.objects = [];
 

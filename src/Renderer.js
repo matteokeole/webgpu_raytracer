@@ -8,7 +8,7 @@ export function Renderer() {
 	let textureView, textureSampler;
 	let computeBindGroup, computePipeline;
 	let renderBindGroup, renderPipeline;
-	let renderTime = 0, time = 0, frameIndex = 0;
+	let renderTime = 0, frameIndex = 0;
 
 	/** @type {?Scene} */
 	this.scene = null;
@@ -52,10 +52,9 @@ export function Renderer() {
 		[renderBindGroup, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format);
 
 		device.queue.writeBuffer(buffers.accumulationStorage, 0, new Float32Array(canvas.width * canvas.height * 4));
-
+		device.queue.writeBuffer(buffers.backgroundColor, 0, this.scene.backgroundColor);
 		new Float32Array(buffers.objects.getMappedRange()).set(this.scene.toObjectBuffer());
 		buffers.objects.unmap();
-
 		new Float32Array(buffers.materials.getMappedRange()).set(this.scene.toMaterialBuffer());
 		buffers.materials.unmap();
 	};
@@ -63,7 +62,6 @@ export function Renderer() {
 	/** @param {Boolean} accumulate */
 	this.render = function(accumulate) {
 		renderTime = performance.now();
-		time++;
 
 		if (accumulate) {
 			frameIndex++;
@@ -75,10 +73,9 @@ export function Renderer() {
 		const offset = (Math.random() * 4294967295) | 0;
 
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
-		device.queue.writeBuffer(buffers.time, 0, Float32Array.of(time));
+		device.queue.writeBuffer(buffers.accumulate, 0, Uint32Array.of(accumulate));
 		device.queue.writeBuffer(buffers.offset, 0, Uint32Array.of(offset));
 		device.queue.writeBuffer(buffers.frameIndex, 0, Float32Array.of(frameIndex));
-		device.queue.writeBuffer(buffers.accumulate, 0, Uint32Array.of(accumulate));
 		device.queue.writeBuffer(buffers.viewport, 0, Uint32Array.of(canvas.clientWidth, canvas.clientHeight));
 
 		const encoder = device.createCommandEncoder();
@@ -86,7 +83,6 @@ export function Renderer() {
 		const computePass = encoder.beginComputePass();
 		computePass.setPipeline(computePipeline);
 		computePass.setBindGroup(0, computeBindGroup);
-		// TODO: Smaller workgroup count with larger workgroup size
 		computePass.dispatchWorkgroups(workgroupCount[0], workgroupCount[1], 1);
 		computePass.end();
 
