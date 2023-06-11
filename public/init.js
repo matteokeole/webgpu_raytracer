@@ -5,51 +5,115 @@ import {Vector3} from "src/math";
 export function init(scene) {
 	scene.backgroundColor = new Vector3(.6, .7, .9);
 	scene.objects = [
+		// Back wall
 		new Sphere({
-			position: new Vector3(0, -101, 0),
+			position: new Vector3(0, 0, 120),
 			radius: 100,
 			materialIndex: 0,
 		}),
+		// Right wall
 		new Sphere({
-			position: new Vector3(-1, 0, 0),
-			radius: 1,
+			position: new Vector3(120, 0, 0),
+			radius: 100,
+			materialIndex: 0,
+		}),
+		// Front wall
+		new Sphere({
+			position: new Vector3(0, 0, -120),
+			radius: 100,
+			materialIndex: 0,
+		}),
+		// Left wall
+		new Sphere({
+			position: new Vector3(-120, 0, 0),
+			radius: 100,
+			materialIndex: 0,
+		}),
+		// Floor
+		new Sphere({
+			position: new Vector3(0, -120, 0),
+			radius: 100,
+			materialIndex: 0,
+		}),
+		// Ceiling
+		new Sphere({
+			position: new Vector3(0, 120, 0),
+			radius: 100,
+			materialIndex: 0,
+		}),
+		// Light
+		new Sphere({
+			position: new Vector3(0, 10, 0),
+			radius: 6,
 			materialIndex: 1,
 		}),
+		// First sphere
+		new Sphere({
+			position: new Vector3(-3, 0, 0),
+			radius: .9,
+			materialIndex: 2,
+		}),
+		// Second sphere
+		new Sphere({
+			position: new Vector3(-1, 0, 0),
+			radius: .9,
+			materialIndex: 3,
+		}),
+		// Third sphere
 		new Sphere({
 			position: new Vector3(1, 0, 0),
-			radius: 1,
-			materialIndex: 2,
+			radius: .9,
+			materialIndex: 4,
 		}),
-		/* new Sphere({
-			position: new Vector3(140, -4, 140),
-			radius: 100,
-			materialIndex: 2,
-		}), */
+		// Fourth sphere
+		new Sphere({
+			position: new Vector3(3, 0, 0),
+			radius: .9,
+			materialIndex: 5,
+		}),
 	];
 	scene.materials = [
+		// Walls
 		new Material({
-			albedo: new Vector3(.8, .2, .3),
-			roughness: 0,
+			albedo: new Vector3(1, 1, 1),
+			roughness: 1,
 			emissionColor: new Vector3(0, 0, 0),
 			emissionStrength: 0,
 		}),
-		new Material({
-			albedo: new Vector3(.2, .7, 1),
-			roughness: 0,
-			emissionColor: new Vector3(0, 0, 0),
-			emissionStrength: 0,
-		}),
-		/* new Material({
-			albedo: new Vector3(1, 1, 1),
-			roughness: 0,
-			emissionColor: new Vector3(.99, .94, .71),
-			emissionStrength: 10,
-		}), */
+		// Light
 		new Material({
 			albedo: new Vector3(1, 1, 1),
-			roughness: 0,
-			emissionColor: new Vector3(1, 1, 1),
+			roughness: 1,
+			emissionColor: new Vector3(1, .2, 0),
 			emissionStrength: 1,
+		}),
+		// First sphere
+		new Material({
+			albedo: new Vector3(1, 1, 1),
+			roughness: .6,
+			emissionColor: new Vector3(0, 0, 0),
+			emissionStrength: 0,
+		}),
+		// Second sphere
+		new Material({
+			albedo: new Vector3(1, 1, 1),
+			roughness: .4,
+			emissionColor: new Vector3(0, 0, 0),
+			emissionStrength: 0,
+		}),
+		// Third sphere
+		new Material({
+			albedo: new Vector3(1, 1, 1),
+			roughness: .2,
+			emissionColor: new Vector3(0, 0, 0),
+			emissionStrength: 0,
+		}),
+		// Fourth sphere
+		new Material({
+			albedo: new Vector3(1, 1, 1),
+			roughness: 0,
+			emissionColor: new Vector3(0, 0, 0),
+			emissionStrength: 0,
 		}),
 	];
 }

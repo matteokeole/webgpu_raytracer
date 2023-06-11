@@ -4,8 +4,11 @@ import {listen} from "./events.js";
 import {init} from "./init.js";
 import {start} from "./loop.js";
 
+const WIDTH = innerWidth;
+const HEIGHT = innerHeight;
+
 export const FIELD_OF_VIEW = 45;
-export const ASPECT_RATIO = innerWidth / innerHeight;
+export const ASPECT_RATIO = WIDTH / HEIGHT;
 export const NEAR = .1;
 export const FAR = 100;
 export const VELOCITY = .01;
@@ -21,7 +24,7 @@ camera.position = camera.target = new Vector3(0, 0, -6);
 
 renderer.scene = scene;
 renderer.camera = camera;
-renderer.resize(new Vector2(innerWidth, innerHeight));
+renderer.resize(new Vector2(WIDTH, HEIGHT));
 
 await renderer.build();
 

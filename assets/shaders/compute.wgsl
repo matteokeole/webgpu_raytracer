@@ -39,8 +39,8 @@ struct Material {
 	emission_strength: f32,
 }
 
-const INFINITY: f32 = 3.402823466e+38;
-const BOUNCES: u32 = 5;
+const FLT_MAX: f32 = 4294967295;
+const BOUNCES: u32 = 4;
 
 var<private> seed: u32;
 
@@ -51,14 +51,14 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 
 	seed = index + offset;
 
-	let color: vec4f = rgen(index, global_invocation_id);
+	let sample: vec4f = rgen(index, global_invocation_id);
 
 	if (accumulate == 0) {
-		accumulation[index] = color;
+		accumulation[index] = sample;
 
-		textureStore(texture_storage, global_invocation_id.xy, color);
+		textureStore(texture_storage, global_invocation_id.xy, sample);
 	} else {
-		accumulation[index] += color;
+		accumulation[index] += sample;
 
 		textureStore(texture_storage, global_invocation_id.xy, accumulation[index] / frame_index);
 	}
@@ -75,8 +75,10 @@ fn rgen(index: u32, global_invocation_id: vec3u) -> vec4f {
 	ray.origin = camera.position;
 	ray.direction = (camera.view_inverse * position).xyz;
 
+	var hit: Hit;
+
 	for (var i: u32; i < BOUNCES; i++) {
-		let hit: Hit = rint(ray);
+		hit = rint(ray);
 
 		if (hit.distance < 0) {
 			light += background_color * throughput;
@@ -90,15 +92,18 @@ fn rgen(index: u32, global_invocation_id: vec3u) -> vec4f {
 		light += material.emission_color * material.emission_strength;
 		throughput *= material.albedo;
 
+		let diffuse: vec3f = normalize(hit.normal + random_vec_unit());
+		let specular: vec3f = reflect(ray.direction, hit.normal);
+
 		ray.origin = hit.position + hit.normal * .0001;
-		ray.direction = normalize(hit.normal + random_vec_unit());
+		ray.direction = mix(specular, diffuse, material.roughness);
 	}
 
 	return vec4f(light, 1);
 }
 
 fn rint(ray: Ray) -> Hit {
-	var closest_t: f32 = INFINITY;
+	var closest_t: f32 = FLT_MAX;
 	var object_index: i32 = -1;
 
 	for (var i: u32; i < arrayLength(&objects); i++) {
@@ -134,14 +139,13 @@ fn rint(ray: Ray) -> Hit {
 fn rchit(ray: Ray, distance: f32, object_index: u32) -> Hit {
 	let object: Sphere = objects[object_index];
 	let origin: vec3f = ray.origin - object.position;
+	let position: vec3f = origin + ray.direction * distance;
 
 	var hit: Hit;
 	hit.distance = distance;
-	hit.position = origin + ray.direction * distance;
-	hit.normal = normalize(hit.position);
+	hit.position = position + object.position;
+	hit.normal = normalize(position);
 	hit.object_index = object_index;
-
-	hit.position += object.position;
 
 	return hit;
 }
@@ -154,30 +158,32 @@ fn rmiss() -> Hit {
 	return hit;
 }
 
-fn tv_noise(index: u32) {
-	let color: vec3f = normalize(random_vec_clamped(0, 1));
+fn tv_noise(id: vec2u) {
+	let color: vec3f = normalize(random_vec_constrained(0, 1));
 
-	accumulation[index] = vec4f(color, 1);
+	textureStore(texture_storage, id, vec4f(color, 1));
 }
 
 fn pcg_hash() -> u32 {
 	seed = seed * 747796405 + 2891336453;
+
 	var word = ((seed >> ((seed >> 28) + 4)) ^ seed) * 277803737;
+
 	return (word >> 22) ^ word;
 }
 
 fn random_float() -> f32 {
-	return f32(pcg_hash());
+	return f32(pcg_hash()) / FLT_MAX;
 }
 
 fn random_vec() -> vec3f {
 	return vec3f(random_float(), random_float(), random_float());
 }
 
-fn random_vec_clamped(min: f32, max: f32) -> vec3f {
+fn random_vec_constrained(min: f32, max: f32) -> vec3f {
 	return random_vec() * (max - min) + min;
 }
 
 fn random_vec_unit() -> vec3f {
-	return normalize(random_vec()) * 2 - 1;
+	return normalize(random_vec_constrained(-1, 1));
 }
