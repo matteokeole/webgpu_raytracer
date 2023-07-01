@@ -3,12 +3,44 @@ import {Vector2} from "src/math";
 import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "./utils.js";
 
 export function Renderer() {
+	/** @type {?GPUDevice} */
+	let device;
+
+	/** @type {HTMLCanvasElement} */
 	const canvas = document.createElement("canvas");
-	let device, context, buffers;
-	let textureView, textureSampler;
-	let computeBindGroup, computePipeline;
-	let renderBindGroup, renderPipeline;
-	let renderTime = 0, frameIndex = 0;
+
+	/** @type {?GPUCanvasContext} */
+	let context;
+
+	/** @type {Object.<String, GPUBuffer>} */
+	const buffers = {};
+
+	/** @type {?GPUTextureView} */
+	let textureView;
+
+	/** @type {?GPUTextureSampler} */
+	let textureSampler;
+
+	/** @type {Object.<String, GPUBindGroup>} */
+	const computeBindGroups = {};
+
+	/** @type {Object.<String, GPUBindGroup>} */
+	const renderBindGroups = {};
+
+	/** @type {?GPUComputePipeline} */
+	let computePipeline;
+
+	/** @type {?GPURenderPipeline} */
+	let renderPipeline;
+
+	/** @type {?GPUCommandEncoder} */
+	let commandEncoder;
+
+	/** @type {Number} */
+	let frameIndex = 1;
+
+	/** @type {Number} */
+	let computeTime = 0;
 
 	/** @type {?Scene} */
 	this.scene = null;
@@ -20,7 +52,7 @@ export function Renderer() {
 	this.getCanvas = () => canvas;
 
 	this.build = async function() {
-		if (navigator.gpu == null) throw "WebGPU not supported.";
+		if (navigator.gpu == null) throw "WebGPU is not supported.";
 
 		const adapter = await navigator.gpu.requestAdapter();
 
@@ -32,7 +64,7 @@ export function Renderer() {
 
 		context.configure({device, format});
 
-		buffers = createBuffers(device, canvas, this.scene.objects.length, this.scene.materials.length);
+		[buffers.textureStorage, buffers.accumulationStorage, buffers.camera, buffers.objects, buffers.materials, buffers.frameIndex, buffers.accumulate] = createBuffers(device, canvas, this.scene.objects.length, this.scene.materials.length);
 
 		textureView = buffers.textureStorage.createView();
 		textureSampler = device.createSampler({
@@ -45,65 +77,64 @@ export function Renderer() {
 		});
 
 		const computeShaderModule = await createShaderModule(device, "assets/shaders/compute.wgsl");
-		[computeBindGroup, computePipeline] = createComputePipeline(device, computeShaderModule, buffers, textureView);
+		[computeBindGroups.texture, computeBindGroups.scene, computeBindGroups.flags, computePipeline] = createComputePipeline(device, computeShaderModule, buffers, textureView);
 
 		const vertexShaderModule = await createShaderModule(device, "assets/shaders/vertex.wgsl");
 		const fragmentShaderModule = await createShaderModule(device, "assets/shaders/fragment.wgsl");
-		[renderBindGroup, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format);
+		[renderBindGroups.texture, renderPipeline] = createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format);
 
 		device.queue.writeBuffer(buffers.accumulationStorage, 0, new Float32Array(canvas.width * canvas.height * 4));
-		device.queue.writeBuffer(buffers.backgroundColor, 0, this.scene.backgroundColor);
+
 		new Float32Array(buffers.objects.getMappedRange()).set(this.scene.toObjectBuffer());
 		buffers.objects.unmap();
+
 		new Float32Array(buffers.materials.getMappedRange()).set(this.scene.toMaterialBuffer());
 		buffers.materials.unmap();
 	};
 
 	/** @param {Boolean} accumulate */
-	this.render = function(accumulate) {
-		renderTime = performance.now();
-
-		if (accumulate) {
-			frameIndex++;
-		} else {
-			frameIndex = 0;
-		}
-
-		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(8);
-		const offset = (Math.random() * 4294967295) | 0;
+	this.beginPasses = function(accumulate) {
+		commandEncoder = device.createCommandEncoder();
+		frameIndex = accumulate ? frameIndex + 1 : 1;
+		computeTime = performance.now();
 
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
-		device.queue.writeBuffer(buffers.accumulate, 0, Uint32Array.of(accumulate));
-		device.queue.writeBuffer(buffers.offset, 0, Uint32Array.of(offset));
 		device.queue.writeBuffer(buffers.frameIndex, 0, Float32Array.of(frameIndex));
-		device.queue.writeBuffer(buffers.viewport, 0, Uint32Array.of(canvas.clientWidth, canvas.clientHeight));
+		device.queue.writeBuffer(buffers.accumulate, 0, Uint32Array.of(accumulate));
+	};
 
-		const encoder = device.createCommandEncoder();
+	this.compute = function() {
+		const workgroupCount = new Vector2(canvas.clientWidth, canvas.clientHeight).divideScalar(8);
 
-		const computePass = encoder.beginComputePass();
+		const computePass = commandEncoder.beginComputePass();
 		computePass.setPipeline(computePipeline);
-		computePass.setBindGroup(0, computeBindGroup);
+		computePass.setBindGroup(0, computeBindGroups.texture);
+		computePass.setBindGroup(1, computeBindGroups.scene);
+		computePass.setBindGroup(2, computeBindGroups.flags);
 		computePass.dispatchWorkgroups(workgroupCount[0], workgroupCount[1], 1);
 		computePass.end();
+	};
 
-		const renderPass = encoder.beginRenderPass({
+	this.render = function() {
+		const renderPass = commandEncoder.beginRenderPass({
 			colorAttachments: [
 				{
 					view: context.getCurrentTexture().createView(),
-					clearValue: Float32Array.of(0, 0, 0, 1),
-					loadOp: "clear",
+					loadOp: "load",
 					storeOp: "store",
 				},
 			],
 		});
 		renderPass.setPipeline(renderPipeline);
-		renderPass.setBindGroup(0, renderBindGroup);
+		renderPass.setBindGroup(0, renderBindGroups.texture);
 		renderPass.draw(6);
 		renderPass.end();
+	};
 
-		device.queue.submit([encoder.finish()]);
+	this.submitPasses = function() {
+		device.queue.submit([commandEncoder.finish()]);
 
-		window["debug-render-time"].textContent = `${(performance.now() - renderTime).toFixed(3)}ms`;
+		window["debug-compute-time"].textContent = `${(performance.now() - computeTime).toFixed(3)}ms`;
 	};
 }
 

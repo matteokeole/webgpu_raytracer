@@ -7,56 +7,42 @@ import {Material, Sphere} from "src";
  * @param {Number} materialLength
  * @returns {Object.<String, GPUBuffer>}
  */
-export function createBuffers(device, canvas, objectLength, materialLength) {
-	return {
-		textureStorage: device.createTexture({
-			size: {
-				width: canvas.width,
-				height: canvas.height,
-			},
-			format: "rgba8unorm",
-			usage: GPUTextureUsage.TEXTURE_BINDING | GPUBufferUsage.COPY_DST,
-		}),
-		accumulationStorage: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * canvas.width * canvas.height * 4,
-			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-		}),
-		camera: device.createBuffer({
-			size: 144,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
-		backgroundColor: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * 3,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
-		objects: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * objectLength,
-			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-			mappedAtCreation: true,
-		}),
-		materials: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * materialLength,
-			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-			mappedAtCreation: true,
-		}),
-		accumulate: device.createBuffer({
-			size: Uint32Array.BYTES_PER_ELEMENT,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
-		offset: device.createBuffer({
-			size: Uint32Array.BYTES_PER_ELEMENT,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
-		frameIndex: device.createBuffer({
-			size: Float32Array.BYTES_PER_ELEMENT,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
-		viewport: device.createBuffer({
-			size: Uint32Array.BYTES_PER_ELEMENT * 2,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		}),
-	};
-}
+export const createBuffers = (device, canvas, objectLength, materialLength) => [
+	device.createTexture({
+		size: {
+			width: canvas.width,
+			height: canvas.height,
+		},
+		format: "rgba8unorm",
+		usage: GPUTextureUsage.TEXTURE_BINDING | GPUBufferUsage.COPY_DST,
+	}),
+	device.createBuffer({
+		size: Float32Array.BYTES_PER_ELEMENT * canvas.width * canvas.height * 4,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	}),
+	device.createBuffer({
+		size: 144,
+		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	}),
+	device.createBuffer({
+		size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * objectLength,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		mappedAtCreation: true,
+	}),
+	device.createBuffer({
+		size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * materialLength,
+		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+		mappedAtCreation: true,
+	}),
+	device.createBuffer({
+		size: Float32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	}),
+	device.createBuffer({
+		size: Uint32Array.BYTES_PER_ELEMENT,
+		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	}),
+];
 
 /**
  * @param {GPUDevice} device
@@ -79,117 +65,121 @@ export async function createShaderModule(device, path) {
  * @returns {Array}
  */
 export function createComputePipeline(device, computeShaderModule, buffers, textureView) {
-	const computeBindGroupLayout = device.createBindGroupLayout({
-		entries: [
-			{
-				binding: 0,
-				visibility: GPUShaderStage.COMPUTE,
-				storageTexture: {
-					format: "rgba8unorm",
-					viewDimension: "2d",
+	const
+		textureComputeBindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.COMPUTE,
+					storageTexture: {
+						format: "rgba8unorm",
+						viewDimension: "2d",
+					},
+				}, {
+					binding: 1,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "storage",
+					},
 				},
-			}, {
-				binding: 2,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "storage",
+			],
+		}),
+		sceneComputeBindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "uniform",
+					},
+				}, {
+					binding: 1,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "read-only-storage",
+					},
+				}, {
+					binding: 2,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "read-only-storage",
+					},
 				},
-			}, {
-				binding: 10,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "uniform",
+			],
+		}),
+		flagsComputeBindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "uniform",
+					},
+				}, {
+					binding: 1,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "uniform",
+					},
 				},
-			}, {
-				binding: 11,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "uniform",
-				},
-			}, {
-				binding: 12,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "read-only-storage",
-				},
-			}, {
-				binding: 13,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "read-only-storage",
-				},
-			}, {
-				binding: 20,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "uniform",
-				},
-			}, {
-				binding: 21,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "uniform",
-				},
-			}, {
-				binding: 22,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "uniform",
-				},
-			},
-		],
-	});
-
-	const computePipelineLayout = device.createPipelineLayout({
-		bindGroupLayouts: [computeBindGroupLayout],
-	});
+			],
+		}),
+		computePipelineLayout = device.createPipelineLayout({
+			bindGroupLayouts: [
+				textureComputeBindGroupLayout,
+				sceneComputeBindGroupLayout,
+				flagsComputeBindGroupLayout,
+			],
+		});
 
 	return [
 		device.createBindGroup({
-			layout: computeBindGroupLayout,
+			layout: textureComputeBindGroupLayout,
 			entries: [
 				{
 					binding: 0,
 					resource: textureView,
 				}, {
-					binding: 2,
+					binding: 1,
 					resource: {
 						buffer: buffers.accumulationStorage,
 					},
-				}, {
-					binding: 10,
+				},
+			],
+		}),
+		device.createBindGroup({
+			layout: sceneComputeBindGroupLayout,
+			entries: [
+				{
+					binding: 0,
 					resource: {
 						buffer: buffers.camera,
 					},
 				}, {
-					binding: 11,
-					resource: {
-						buffer: buffers.backgroundColor,
-					},
-				}, {
-					binding: 12,
+					binding: 1,
 					resource: {
 						buffer: buffers.objects,
 					},
 				}, {
-					binding: 13,
+					binding: 2,
 					resource: {
 						buffer: buffers.materials,
 					},
-				}, {
-					binding: 20,
-					resource: {
-						buffer: buffers.accumulate,
-					},
-				}, {
-					binding: 21,
-					resource: {
-						buffer: buffers.offset,
-					},
-				}, {
-					binding: 22,
+				},
+			],
+		}),
+		device.createBindGroup({
+			layout: flagsComputeBindGroupLayout,
+			entries: [
+				{
+					binding: 0,
 					resource: {
 						buffer: buffers.frameIndex,
+					},
+				}, {
+					binding: 1,
+					resource: {
+						buffer: buffers.accumulate,
 					},
 				},
 			],
@@ -215,47 +205,23 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
  * @returns {Array}
  */
 export function createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format) {
-	const renderBindGroupLayout = device.createBindGroupLayout({
-		entries: [
-			{
-				binding: 0,
-				visibility: GPUShaderStage.FRAGMENT,
-				texture: {},
-			}, {
-				binding: 1,
-				visibility: GPUShaderStage.FRAGMENT,
-				sampler: {},
-			}, {
-				binding: 2,
-				visibility: GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "read-only-storage",
+	const
+		renderBindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.FRAGMENT,
+					texture: {},
+				}, {
+					binding: 1,
+					visibility: GPUShaderStage.FRAGMENT,
+					sampler: {},
 				},
-			}, {
-				binding: 10,
-				visibility: GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "uniform",
-				},
-			}, {
-				binding: 11,
-				visibility: GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "uniform",
-				},
-			}, {
-				binding: 20,
-				visibility: GPUShaderStage.FRAGMENT,
-				buffer: {
-					type: "uniform",
-				},
-			},
-		],
-	});
-
-	const renderPipelineLayout = device.createPipelineLayout({
-		bindGroupLayouts: [renderBindGroupLayout],
-	});
+			],
+		}),
+		renderPipelineLayout = device.createPipelineLayout({
+			bindGroupLayouts: [renderBindGroupLayout],
+		});
 
 	return [
 		device.createBindGroup({
@@ -267,26 +233,6 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 				}, {
 					binding: 1,
 					resource: textureSampler,
-				}, {
-					binding: 2,
-					resource: {
-						buffer: buffers.accumulationStorage,
-					},
-				}, {
-					binding: 10,
-					resource: {
-						buffer: buffers.accumulate,
-					},
-				}, {
-					binding: 11,
-					resource: {
-						buffer: buffers.frameIndex,
-					},
-				}, {
-					binding: 20,
-					resource: {
-						buffer: buffers.viewport,
-					},
 				},
 			],
 		}),

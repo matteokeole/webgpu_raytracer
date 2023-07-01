@@ -33,6 +33,6 @@
 .debug #debug-up::before {
 	content: "Up: ";
 }
-.debug #debug-render-time::before {
-	content: "Render time: ";
+.debug #debug-compute-time::before {
+	content: "Compute time: ";
 }

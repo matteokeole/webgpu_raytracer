@@ -1,5 +1,5 @@
+import {renderer} from "./main.js";
 import {update} from "./update.js";
-import {render} from "./render.js";
 
 export function start() {
 	delta = 0;
@@ -23,9 +23,12 @@ function loop() {
 	then = now;
 
 	try {
-		const needsUpdate = update(delta);
+		const accumulate = update(delta);
 
-		render(needsUpdate);
+		renderer.beginPasses(accumulate);
+		renderer.compute();
+		renderer.render();
+		renderer.submitPasses();
 	} catch (error) {
 		cancelAnimationFrame(request);
 

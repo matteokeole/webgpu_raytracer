@@ -1,12 +1,10 @@
 @group(0) @binding(0) var texture_storage: texture_storage_2d<rgba8unorm, write>;
-@group(0) @binding(2) var<storage, read_write> accumulation: array<vec4f>;
-@group(0) @binding(10) var<uniform> camera: Camera;
-@group(0) @binding(11) var<uniform> background_color: vec3f;
-@group(0) @binding(12) var<storage> objects: array<Sphere>;
-@group(0) @binding(13) var<storage> materials: array<Material>;
-@group(0) @binding(20) var<uniform> accumulate: u32;
-@group(0) @binding(21) var<uniform> offset: u32;
-@group(0) @binding(22) var<uniform> frame_index: f32;
+@group(0) @binding(1) var<storage, read_write> accumulation: array<vec4f>;
+@group(1) @binding(0) var<uniform> camera: Camera;
+@group(1) @binding(1) var<storage> objects: array<Sphere>;
+@group(1) @binding(2) var<storage> materials: array<Material>;
+@group(2) @binding(0) var<uniform> frame_index: f32;
+@group(2) @binding(1) var<uniform> accumulate: u32;
 
 struct Camera {
 	projection_inverse: mat4x4f,
@@ -39,19 +37,17 @@ struct Material {
 	emission_strength: f32,
 }
 
-const FLT_MAX: f32 = 4294967295;
+const F32_MAX: f32 = 4294967295;
 const BOUNCES: u32 = 4;
-
-var<private> seed: u32;
+const BACKGROUND_COLOR: vec3f = vec3f(.6, .7, .9);
 
 @compute
 @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	let index: u32 = global_invocation_id.x + global_invocation_id.y * textureDimensions(texture_storage).x;
+	var seed: u32 = index * u32(frame_index);
 
-	seed = index + offset;
-
-	let sample: vec4f = rgen(index, global_invocation_id);
+	let sample: vec4f = rgen(global_invocation_id, &seed);
 
 	if (accumulate == 0) {
 		accumulation[index] = sample;
@@ -64,7 +60,7 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	}
 }
 
-fn rgen(index: u32, global_invocation_id: vec3u) -> vec4f {
+fn rgen(global_invocation_id: vec3u, seed: ptr<function, u32>) -> vec4f {
 	let uv: vec2f = vec2f(global_invocation_id.xy) / vec2f(textureDimensions(texture_storage)) * 2 - 1;
 	let position: vec4f = vec4f((camera.projection_inverse * vec4f(uv, 0, 1)).xyz, 0);
 
@@ -78,10 +74,11 @@ fn rgen(index: u32, global_invocation_id: vec3u) -> vec4f {
 	var hit: Hit;
 
 	for (var i: u32; i < BOUNCES; i++) {
+		// *seed += i;
 		hit = rint(ray);
 
 		if (hit.distance < 0) {
-			light += background_color * throughput;
+			light += BACKGROUND_COLOR * throughput;
 
 			break;
 		}
@@ -92,7 +89,7 @@ fn rgen(index: u32, global_invocation_id: vec3u) -> vec4f {
 		light += material.emission_color * material.emission_strength;
 		throughput *= material.albedo;
 
-		let diffuse: vec3f = normalize(hit.normal + random_vec_unit());
+		let diffuse: vec3f = normalize(hit.normal + random_vec_unit(seed));
 		let specular: vec3f = reflect(ray.direction, hit.normal);
 
 		ray.origin = hit.position + hit.normal * .0001;
@@ -103,7 +100,7 @@ fn rgen(index: u32, global_invocation_id: vec3u) -> vec4f {
 }
 
 fn rint(ray: Ray) -> Hit {
-	var closest_t: f32 = FLT_MAX;
+	var closest_t: f32 = F32_MAX;
 	var object_index: i32 = -1;
 
 	for (var i: u32; i < arrayLength(&objects); i++) {
@@ -152,38 +149,30 @@ fn rchit(ray: Ray, distance: f32, object_index: u32) -> Hit {
 
 fn rmiss() -> Hit {
 	var hit: Hit;
-
 	hit.distance = -1;
 
 	return hit;
 }
 
-fn tv_noise(id: vec2u) {
-	let color: vec3f = normalize(random_vec_constrained(0, 1));
+fn pcg_hash(input: u32) -> u32 {
+	let state: u32 = input * 747796405u + 2891336453u;
+	let word: u32 = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
 
-	textureStore(texture_storage, id, vec4f(color, 1));
+	return (word >> 22u) ^ word;
 }
 
-fn pcg_hash() -> u32 {
-	seed = seed * 747796405 + 2891336453;
+fn random_float(seed: ptr<function, u32>) -> f32 {
+	*seed = pcg_hash(*seed);
 
-	var word = ((seed >> ((seed >> 28) + 4)) ^ seed) * 277803737;
-
-	return (word >> 22) ^ word;
+	return f32(*seed) / F32_MAX;
 }
 
-fn random_float() -> f32 {
-	return f32(pcg_hash()) / FLT_MAX;
-}
-
-fn random_vec() -> vec3f {
-	return vec3f(random_float(), random_float(), random_float());
-}
-
-fn random_vec_constrained(min: f32, max: f32) -> vec3f {
-	return random_vec() * (max - min) + min;
-}
-
-fn random_vec_unit() -> vec3f {
-	return normalize(random_vec_constrained(-1, 1));
+fn random_vec_unit(seed: ptr<function, u32>) -> vec3f {
+	return normalize(
+		vec3f(
+			random_float(seed),
+			random_float(seed),
+			random_float(seed),
+		) * 2 - 1,
+	);
 }
