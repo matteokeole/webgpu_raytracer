@@ -28,7 +28,7 @@ renderer.resize(new Vector2(WIDTH, HEIGHT));
 
 await renderer.build();
 
-document.body.firstElementChild.appendChild(renderer.getCanvas());
+document.body.appendChild(renderer.getCanvas());
 
 listen();
 start();

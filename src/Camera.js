@@ -78,7 +78,7 @@ export function Camera(fov, aspect, near, far) {
 Camera.TURN_VELOCITY = .001;
 
 /** @type {Number} */
-Camera.LERP_FACTOR = 0 /* .95 */;
+Camera.LERP_FACTOR = .95;
 
 /** @type {Vector3} */
 Camera.UP = new Vector3(0, 1, 0);

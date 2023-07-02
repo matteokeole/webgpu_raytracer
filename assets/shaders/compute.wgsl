@@ -3,7 +3,7 @@
 @group(1) @binding(0) var<uniform> camera: Camera;
 @group(1) @binding(1) var<storage> objects: array<Sphere>;
 @group(1) @binding(2) var<storage> materials: array<Material>;
-@group(2) @binding(0) var<uniform> frame_index: f32;
+@group(2) @binding(0) var<uniform> frame_index: u32;
 @group(2) @binding(1) var<uniform> accumulate: u32;
 
 struct Camera {
@@ -44,10 +44,11 @@ const BACKGROUND_COLOR: vec3f = vec3f(.6, .7, .9);
 @compute
 @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
-	let index: u32 = global_invocation_id.x + global_invocation_id.y * textureDimensions(texture_storage).x;
-	var seed: u32 = index * u32(frame_index);
+	let viewport: vec2u = textureDimensions(texture_storage);
+	let index: u32 = global_invocation_id.x + global_invocation_id.y * viewport.x;
+	var seed: u32 = index * frame_index;
 
-	let sample: vec4f = rgen(global_invocation_id, &seed);
+	let sample: vec4f = rgen(global_invocation_id, viewport, &seed);
 
 	if (accumulate == 0) {
 		accumulation[index] = sample;
@@ -56,12 +57,12 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3u) {
 	} else {
 		accumulation[index] += sample;
 
-		textureStore(texture_storage, global_invocation_id.xy, accumulation[index] / frame_index);
+		textureStore(texture_storage, global_invocation_id.xy, accumulation[index] / f32(frame_index));
 	}
 }
 
-fn rgen(global_invocation_id: vec3u, seed: ptr<function, u32>) -> vec4f {
-	let uv: vec2f = vec2f(global_invocation_id.xy) / vec2f(textureDimensions(texture_storage)) * 2 - 1;
+fn rgen(global_invocation_id: vec3u, viewport: vec2u, seed: ptr<function, u32>) -> vec4f {
+	let uv: vec2f = vec2f(global_invocation_id.xy) / vec2f(viewport) * 2 - 1;
 	let position: vec4f = vec4f((camera.projection_inverse * vec4f(uv, 0, 1)).xyz, 0);
 
 	var light: vec3f;
@@ -74,7 +75,8 @@ fn rgen(global_invocation_id: vec3u, seed: ptr<function, u32>) -> vec4f {
 	var hit: Hit;
 
 	for (var i: u32; i < BOUNCES; i++) {
-		// *seed += i;
+		*seed += i;
+
 		hit = rint(ray);
 
 		if (hit.distance < 0) {

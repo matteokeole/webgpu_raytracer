@@ -99,7 +99,7 @@ export function Renderer() {
 		computeTime = performance.now();
 
 		device.queue.writeBuffer(buffers.camera, 0, this.camera.toBuffer());
-		device.queue.writeBuffer(buffers.frameIndex, 0, Float32Array.of(frameIndex));
+		device.queue.writeBuffer(buffers.frameIndex, 0, Uint32Array.of(frameIndex));
 		device.queue.writeBuffer(buffers.accumulate, 0, Uint32Array.of(accumulate));
 	};
 

@@ -1,3 +1,8 @@
+struct VertexOutput {
+	@builtin(position) position: vec4f,
+	@location(0) uv: vec2f,
+}
+
 const VERTICES: array<vec2f, 6> = array(
 	vec2f(-1,  1),
 	vec2f( 1,  1),
@@ -6,11 +11,6 @@ const VERTICES: array<vec2f, 6> = array(
 	vec2f( 1, -1),
 	vec2f(-1, -1),
 );
-
-struct VertexOutput {
-	@builtin(position) position: vec4f,
-	@location(0) uv: vec2f,
-}
 
 @vertex
 fn main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
