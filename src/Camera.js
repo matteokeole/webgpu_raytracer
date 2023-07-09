@@ -56,7 +56,7 @@ export function Camera(fov, aspect, near, far) {
 	};
 
 	this.update = function() {
-		projectionInverse = Matrix4.perspective(fov, this.aspect, near, far).invert();
+		projectionInverse = Matrix4.perspective(fov, this.aspect, near, far, 1).invert();
 		viewInverse = Matrix4.lookAt(
 			this.position,
 			this.position.clone().add(forward),
