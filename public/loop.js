@@ -25,12 +25,9 @@ function loop() {
 	try {
 		const accumulate = update(delta);
 
-		renderer.beginPasses(accumulate);
-		renderer.compute();
-		renderer.render();
-		renderer.submitPasses();
+		renderer.render(accumulate);
 	} catch (error) {
-		cancelAnimationFrame(request);
+		stop();
 
 		throw error;
 	}

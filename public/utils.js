@@ -1,13 +1,13 @@
-import {Material, Sphere} from "src";
+import {Material, Mesh} from "src";
 
 /**
  * @param {GPUDevice} device
  * @param {HTMLCanvasElement} canvas
- * @param {Number} objectLength
- * @param {Number} materialLength
+ * @param {Number} meshCount
+ * @param {Number} materialCaount
  * @returns {Object.<String, GPUBuffer>}
  */
-export const createBuffers = (device, canvas, objectLength, materialLength) => [
+export const createBuffers = (device, canvas, meshCount, materialCount) => [
 	device.createTexture({
 		size: {
 			width: canvas.width,
@@ -25,12 +25,12 @@ export const createBuffers = (device, canvas, objectLength, materialLength) => [
 		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	}),
 	device.createBuffer({
-		size: Float32Array.BYTES_PER_ELEMENT * Sphere.BUFFER_SIZE * objectLength,
+		size: Float32Array.BYTES_PER_ELEMENT * Mesh.BUFFER_SIZE * meshCount,
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		mappedAtCreation: true,
 	}),
 	device.createBuffer({
-		size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * materialLength,
+		size: Float32Array.BYTES_PER_ELEMENT * Material.BUFFER_SIZE * materialCount,
 		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 		mappedAtCreation: true,
 	}),
@@ -158,7 +158,7 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				}, {
 					binding: 1,
 					resource: {
-						buffer: buffers.objects,
+						buffer: buffers.meshes,
 					},
 				}, {
 					binding: 2,
@@ -198,13 +198,12 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
  * @param {GPUDevice} device
  * @param {GPUShaderModule} vertexShaderModule
  * @param {GPUShaderModule} fragmentShaderModule
- * @param {Object.<String, GPUBuffer>} buffers
  * @param {GPUTextureView} textureView
  * @param {GPUSampler} textureSampler
  * @param {String} format
  * @returns {Array}
  */
-export function createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, buffers, textureView, textureSampler, format) {
+export function createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, textureView, textureSampler, format) {
 	const
 		renderBindGroupLayout = device.createBindGroupLayout({
 			entries: [

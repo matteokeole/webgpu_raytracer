@@ -2,11 +2,7 @@ import {Vector2} from "src/math";
 import {keys, camera, renderer} from "./main.js";
 
 export function listen() {
-	addEventListener("click", function({target}) {
-		if (target !== renderer.getCanvas()) return;
-
-		renderer.lock();
-	});
+	renderer.getCanvas().addEventListener("click", () => renderer.lock());
 
 	document.addEventListener("pointerlockchange", function() {
 		if (renderer.isLocked()) {

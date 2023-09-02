@@ -1,31 +1,58 @@
-import {Material, Sphere} from "src";
+import {Material, Mesh} from "src";
 
-export function Scene() {
-	/** @type {Set.<Sphere>} */
-	this.objects = [];
+export class Scene {
+	/** @type {Mesh[]} */
+	#meshes;
 
-	/** @type {Set.<Material>} */
-	this.materials = [];
+	/** @type {Material[]} */
+	#materials;
+
+	constructor() {
+		this.#meshes = [];
+		this.#materials = [];
+	}
+
+	/** @returns {Mesh[]} */
+	getMeshes() {
+		return this.#meshes;
+	}
+
+	/** @returns {Material[]} */
+	getMaterials() {
+		return this.#materials;
+	}
+
+	/** @returns {Float32Array} */
+	getMeshBuffer() {
+		const meshCount = this.#meshes.length;
+		const buffer = new Float32Array(Mesh.BUFFER_SIZE * meshCount);
+
+		for (let i = 0; i < meshCount; i++) {
+			buffer.set(this.#meshes[i].getBuffer(), Mesh.BUFFER_SIZE * i);
+		}
+
+		return buffer;
+	}
+
+	/** @returns {Float32Array} */
+	getMaterialBuffer() {
+		const materialCount = this.#materials.length;
+		const buffer = new Float32Array(Material.BUFFER_SIZE * materialCount);
+
+		for (let i = 0; i < materialCount; i++) {
+			buffer.set(this.#materials[i].getBuffer(), Material.BUFFER_SIZE * i);
+		}
+
+		return buffer;
+	}
+
+	/** @param {Mesh} mesh */
+	addMesh(mesh) {
+		this.#meshes.push(mesh);
+	}
+
+	/** @param {Material} material */
+	addMaterial(material) {
+		this.#materials.push(material);
+	}
 }
-
-/** @returns {Float32Array} */
-Scene.prototype.toObjectBuffer = function() {
-	const buffer = new Float32Array(this.objects.length * Sphere.BUFFER_SIZE);
-
-	for (let i = 0, l = this.objects.length; i < l; i++) {
-		buffer.set(this.objects[i].toBuffer(), i * Sphere.BUFFER_SIZE);
-	}
-
-	return buffer;
-};
-
-/** @returns {Float32Array} */
-Scene.prototype.toMaterialBuffer = function() {
-	const buffer = new Float32Array(this.materials.length * Material.BUFFER_SIZE);
-
-	for (let i = 0, l = this.materials.length; i < l; i++) {
-		buffer.set(this.materials[i].toBuffer(), i * Material.BUFFER_SIZE);
-	}
-
-	return buffer;
-};

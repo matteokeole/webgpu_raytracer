@@ -1,7 +1,7 @@
 @group(0) @binding(0) var texture_storage: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(1) var<storage, read_write> accumulation: array<vec4f>;
 @group(1) @binding(0) var<uniform> camera: Camera;
-@group(1) @binding(1) var<storage> objects: array<Sphere>;
+@group(1) @binding(1) var<storage> meshes: array<Sphere>;
 @group(1) @binding(2) var<storage> materials: array<Material>;
 @group(2) @binding(0) var<uniform> frame_index: u32;
 @group(2) @binding(1) var<uniform> accumulate: u32;
@@ -21,7 +21,7 @@ struct Hit {
 	distance: f32,
 	position: vec3f,
 	normal: vec3f,
-	object_index: u32,
+	mesh_index: u32,
 }
 
 struct Sphere {
@@ -85,8 +85,8 @@ fn rgen(global_invocation_id: vec3u, viewport: vec2u, seed: ptr<function, u32>) 
 			break;
 		}
 
-		let object: Sphere = objects[hit.object_index];
-		let material: Material = materials[u32(object.material_index)];
+		let mesh: Sphere = meshes[hit.mesh_index];
+		let material: Material = materials[u32(mesh.material_index)];
 
 		light += material.emission_color * material.emission_strength;
 		throughput *= material.albedo;
@@ -103,10 +103,10 @@ fn rgen(global_invocation_id: vec3u, viewport: vec2u, seed: ptr<function, u32>) 
 
 fn rint(ray: Ray) -> Hit {
 	var closest_t: f32 = F32_MAX;
-	var object_index: i32 = -1;
+	var mesh_index: i32 = -1;
 
-	for (var i: u32; i < arrayLength(&objects); i++) {
-		let sphere: Sphere = objects[i];
+	for (var i: u32; i < arrayLength(&meshes); i++) {
+		let sphere: Sphere = meshes[i];
 
 		let origin: vec3f = ray.origin - sphere.position;
 		let a: f32 = dot(ray.direction, ray.direction) * 2;
@@ -125,26 +125,26 @@ fn rint(ray: Ray) -> Hit {
 		}
 
 		closest_t = t;
-		object_index = i32(i);
+		mesh_index = i32(i);
 	}
 
-	if (object_index < 0) {
+	if (mesh_index < 0) {
 		return rmiss();
 	}
 
-	return rchit(ray, closest_t, u32(object_index));
+	return rchit(ray, closest_t, u32(mesh_index));
 }
 
-fn rchit(ray: Ray, distance: f32, object_index: u32) -> Hit {
-	let object: Sphere = objects[object_index];
-	let origin: vec3f = ray.origin - object.position;
+fn rchit(ray: Ray, distance: f32, mesh_index: u32) -> Hit {
+	let mesh: Sphere = meshes[mesh_index];
+	let origin: vec3f = ray.origin - mesh.position;
 	let position: vec3f = origin + ray.direction * distance;
 
 	var hit: Hit;
 	hit.distance = distance;
-	hit.position = position + object.position;
+	hit.position = position + mesh.position;
 	hit.normal = normalize(position);
-	hit.object_index = object_index;
+	hit.mesh_index = mesh_index;
 
 	return hit;
 }

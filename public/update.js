@@ -1,4 +1,4 @@
-import {Camera} from "src";
+import {AbstractCamera} from "src";
 import {Vector3} from "src/math";
 import {VELOCITY, VELOCITY_SQRT1_2, keys, camera} from "./main.js";
 
@@ -17,13 +17,13 @@ export function update(delta) {
 	if (keys.has("Space")) camera.moveY(velocity);
 	if (keys.has("ControlLeft")) camera.moveY(-velocity);
 
-	camera.position = camera.target
+	camera.position = camera.targetPosition
 		.clone()
-		.lerp(camera.position, Camera.LERP_FACTOR);
+		.lerp(camera.position, AbstractCamera.LERP_FACTOR);
 	camera.update();
 
 	// Cancel accumulation on camera movement
-	if (!nearequals(camera.target, camera.position, .025)) accumulate = false;
+	if (!nearequals(camera.targetPosition, camera.position, .025)) accumulate = false;
 
 	// Cancel accumulation on camera rotation
 	if (!equals(prevDirection, camera.getForward())) accumulate = false;
