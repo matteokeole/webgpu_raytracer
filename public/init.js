@@ -4,79 +4,93 @@ import {Sphere} from "./meshes/Sphere.js";
 
 /** @param {Scene} scene */
 export function init(scene) {
-	// Floor
-	scene.addMesh(
-		new Sphere({
-			position: new Vector3(0, -100.9, 0),
-			radius: 100,
-			materialIndex: 0,
-		}),
-	);
+	// Materials
+	{
+		// Floor material
+		scene.addMaterial(
+			new Material({
+				albedo: new Vector3(1, 1, 1),
+				roughness: 1,
+				emissionColor: new Vector3(0, 0, 0),
+				emissionStrength: 0,
+			}),
+		);
 
-	// First sphere
-	scene.addMesh(
-		new Sphere({
-			position: new Vector3(.658, -.2, 0),
-			radius: .7,
-			materialIndex: 1,
-		}),
-	);
+		// Light material
+		scene.addMaterial(
+			new Material({
+				albedo: new Vector3(1, 1, 1),
+				roughness: 1,
+				emissionColor: new Vector3(1, 1, 1),
+				emissionStrength: 100,
+			}),
+		);
 
-	// Second sphere
-	scene.addMesh(
-		new Sphere({
-			position: new Vector3(2.5, .27, 0),
-			radius: 1.2,
-			materialIndex: 2,
-		}),
-	);
+		// Rough material
+		scene.addMaterial(
+			new Material({
+				albedo: new Vector3(1, 1, 1),
+				roughness: 1,
+				emissionColor: new Vector3(0, 0, 0),
+				emissionStrength: 0,
+			}),
+		);
+	}
 
-	// Light
-	scene.addMesh(
-		new Sphere({
-			position: new Vector3(0, 10, 0),
-			radius: 6,
-			materialIndex: 3,
-		}),
-	);
+	// Meshes
+	{
+		// Floor
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(0, -100.9, 0),
+				radius: 100,
+				materialIndex: 0,
+			}),
+		);
 
-	// Floor
-	scene.addMaterial(
-		new Material({
-			albedo: new Vector3(1, 1, 1),
-			roughness: 1,
-			emissionColor: new Vector3(0, 0, 0),
-			emissionStrength: 0,
-		}),
-	);
+		// Light
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(0, 0, 3),
+				radius: 1,
+				materialIndex: 1,
+			}),
+		);
 
-	// First sphere
-	scene.addMaterial(
-		new Material({
-			albedo: new Vector3(1, 1, 1),
-			roughness: .1,
-			emissionColor: new Vector3(0, 0, 0),
-			emissionStrength: 0,
-		}),
-	);
+		// Front sphere
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(0, -.199, -.513),
+				radius: .7,
+				materialIndex: 2,
+			}),
+		);
 
-	// Second sphere
-	scene.addMaterial(
-		new Material({
-			albedo: new Vector3(1, 1, 1),
-			roughness: 0,
-			emissionColor: new Vector3(1, 1, 1),
-			emissionStrength: 1,
-		}),
-	);
+		// Left sphere
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(-.701, -.199, .7),
+				radius: .7,
+				materialIndex: 2,
+			}),
+		);
 
-	// Light
-	scene.addMaterial(
-		new Material({
-			albedo: new Vector3(1, 1, 1),
-			roughness: 1,
-			emissionColor: new Vector3(1, .2, 0),
-			emissionStrength: 1,
-		}),
-	);
+		// Right sphere
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(.701, -.199, .7),
+				radius: .7,
+				materialIndex: 2,
+			}),
+		);
+
+		// Top sphere
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(0, .944, .296),
+				radius: .7,
+				materialIndex: 2,
+			}),
+		);
+	}
 }

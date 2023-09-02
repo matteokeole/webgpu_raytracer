@@ -4,6 +4,9 @@ export class Material {
 	/** @type {Number} */
 	static BUFFER_SIZE = 12;
 
+	/** @type {Number} */
+	#id;
+
 	/** @type {Vector3} */
 	#albedo;
 
@@ -18,16 +21,23 @@ export class Material {
 
 	/**
 	 * @param {Object} options
+	 * @param {Number} options.id
 	 * @param {Vector3} options.albedo
 	 * @param {Number} options.roughness
 	 * @param {Vector3} options.emissionColor
 	 * @param {Number} options.emissionStrength
 	 */
-	constructor({albedo, roughness, emissionColor, emissionStrength}) {
+	constructor({id, albedo, roughness, emissionColor, emissionStrength}) {
+		this.#id = id;
 		this.#albedo = albedo;
 		this.#roughness = roughness;
 		this.#emissionColor = emissionColor;
 		this.#emissionStrength = emissionStrength;
+	}
+
+	/** @returns {Number} */
+	getId() {
+		return this.#id;
 	}
 
 	/** @returns {Float32Array} */
