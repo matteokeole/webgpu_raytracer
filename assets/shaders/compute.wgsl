@@ -39,7 +39,7 @@ struct Material {
 
 const F32_MAX: f32 = 4294967295;
 const BOUNCES: u32 = 4;
-const BACKGROUND_COLOR: vec3f = vec3f(.6, .7, .9);
+const BACKGROUND_COLOR: vec3f = vec3f(.06, .07, .09);
 
 @compute
 @workgroup_size(8, 8, 1)

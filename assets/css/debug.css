@@ -8,6 +8,7 @@
 	backdrop-filter: blur(20px);
 	color: #ddd;
 	font-family: Consolas, monospace;
+	z-index: 1;
 }
 
 .debug span {

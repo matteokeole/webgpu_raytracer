@@ -15,12 +15,16 @@ const canvas = document.createElement("canvas");
 
 export const renderer = new Renderer(canvas);
 export const scene = new Scene();
-export const camera = new Camera(90, WIDTH / HEIGHT, .1, 100);
+export const camera = new Camera(60, WIDTH / HEIGHT, .1, 100);
 export const keys = new Set();
 
 init(scene);
 
-camera.position = camera.targetPosition = new Vector3(0, 0, -3);
+camera.position = camera.targetPosition = new Vector3(1.42, 0, 2.20);
+camera.rotation = new Vector3(-0.08, -2.50, 0);
+camera.forward = new Vector3(-0.59, -0.08, -0.8);
+camera.right = new Vector3(-0.8, 0, 0.6);
+camera.up = new Vector3(-0.05, 1, -0.07);
 
 renderer.scene = scene;
 renderer.camera = camera;

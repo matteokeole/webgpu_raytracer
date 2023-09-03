@@ -26,15 +26,15 @@ export function update(delta) {
 	if (!nearequals(camera.targetPosition, camera.position, .025)) accumulate = false;
 
 	// Cancel accumulation on camera rotation
-	if (!equals(prevDirection, camera.getForward())) accumulate = false;
+	if (!equals(prevDirection, camera.forward)) accumulate = false;
 
-	prevDirection = camera.getForward();
+	prevDirection = camera.forward;
 
 	window["debug-position"].textContent = [...camera.position].map(e => e.toFixed(2)).join(' ');
 	window["debug-rotation"].textContent = [...camera.rotation].map(e => e.toFixed(2)).join(' ');
-	window["debug-forward"].textContent = [...camera.getForward()].map(e => e.toFixed(2)).join(' ');
-	window["debug-right"].textContent = [...camera.getRight()].map(e => e.toFixed(2)).join(' ');
-	window["debug-up"].textContent = [...camera.getUp()].map(e => e.toFixed(2)).join(' ');
+	window["debug-forward"].textContent = [...camera.forward].map(e => e.toFixed(2)).join(' ');
+	window["debug-right"].textContent = [...camera.right].map(e => e.toFixed(2)).join(' ');
+	window["debug-up"].textContent = [...camera.up].map(e => e.toFixed(2)).join(' ');
 
 	return accumulate;
 }

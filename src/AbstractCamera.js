@@ -38,13 +38,13 @@ export class AbstractCamera {
 	rotation;
 
 	/** @type {Vector3} */
-	#forward;
+	forward;
 
 	/** @type {Vector3} */
-	#up;
+	up;
 
 	/** @type {Vector3} */
-	#right;
+	right;
 
 	/**
 	 * @param {Number} fieldOfView
@@ -65,9 +65,9 @@ export class AbstractCamera {
 		this.targetPosition = new Vector3();
 		this.rotation = new Vector3();
 
-		this.#forward = new Vector3(0, 0, 1);
-		this.#up = new Vector3(0, 1, 0);
-		this.#right = new Vector3(1, 0, 0);
+		this.forward = new Vector3(0, 0, 1);
+		this.up = new Vector3(0, 1, 0);
+		this.right = new Vector3(1, 0, 0);
 	}
 
 	/** @returns {Matrix4} */
@@ -78,21 +78,6 @@ export class AbstractCamera {
 	/** @returns {Matrix4} */
 	getViewInverse() {
 		return this.#viewInverse;
-	}
-
-	/** @returns {Vector3} */
-	getForward() {
-		return this.#forward;
-	}
-
-	/** @returns {Vector3} */
-	getUp() {
-		return this.#up;
-	}
-
-	/** @returns {Vector3} */
-	getRight() {
-		return this.#right;
 	}
 
 	/** @returns {Float32Array} */
@@ -107,21 +92,21 @@ export class AbstractCamera {
 
 	/** @param {Number} x */
 	truck(x) {
-		const right = this.#right.clone();
+		const right = this.right.clone();
 
 		this.targetPosition.add(right.multiplyScalar(x));
 	}
 
 	/** @param {Number} y */
 	pedestal(y) {
-		const up = this.#up.clone();
+		const up = this.up.clone();
 
 		this.targetPosition.add(up.multiplyScalar(y));
 	}
 
 	/** @param {Number} z */
 	dolly(z) {
-		const forward = this.#forward.clone();
+		const forward = this.forward.clone();
 
 		this.targetPosition.add(forward.multiplyScalar(z));
 	}
@@ -133,7 +118,7 @@ export class AbstractCamera {
 
 	/** @param {Number} z */
 	moveZ(z) {
-		const newForward = this.#right.cross(AbstractCamera.UP);
+		const newForward = this.right.cross(AbstractCamera.UP);
 
 		this.targetPosition.add(newForward.multiplyScalar(z));
 	}
@@ -153,17 +138,17 @@ export class AbstractCamera {
 		const pitch = this.rotation[0];
 		const yaw = this.rotation[1];
 
-		this.#forward = sphericalToCartesian(yaw, pitch);
-		this.#right = sphericalToCartesian(yaw + PI * .5, 0);
-		this.#up = this.#forward.cross(this.#right);
+		this.forward = sphericalToCartesian(yaw, pitch);
+		this.right = sphericalToCartesian(yaw + PI * .5, 0);
+		this.up = this.forward.cross(this.right);
 	}
 
 	update() {
 		this.#projectionInverse = Matrix4.perspective(this.#fieldOfView, this.#aspectRatio, this.#nearClipPlane, this.#farClipPlane, 1).invert();
 		this.#viewInverse = Matrix4.lookAt(
 			this.position,
-			this.position.clone().add(this.#forward),
-			this.#up,
+			this.position.clone().add(this.forward),
+			this.up,
 		).invert();
 	}
 }

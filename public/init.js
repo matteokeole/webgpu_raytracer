@@ -9,7 +9,7 @@ export function init(scene) {
 		// Floor material
 		scene.addMaterial(
 			new Material({
-				albedo: new Vector3(1, 1, 1),
+				albedo: new Vector3(.4, .3, .1),
 				roughness: 1,
 				emissionColor: new Vector3(0, 0, 0),
 				emissionStrength: 0,
@@ -19,18 +19,18 @@ export function init(scene) {
 		// Light material
 		scene.addMaterial(
 			new Material({
-				albedo: new Vector3(1, 1, 1),
+				albedo: new Vector3(0, 0, 0),
 				roughness: 1,
 				emissionColor: new Vector3(1, 1, 1),
-				emissionStrength: 100,
+				emissionStrength: 1,
 			}),
 		);
 
-		// Rough material
+		// Gold material
 		scene.addMaterial(
 			new Material({
-				albedo: new Vector3(1, 1, 1),
-				roughness: 1,
+				albedo: new Vector3(.83, .68, .21),
+				roughness: .03,
 				emissionColor: new Vector3(0, 0, 0),
 				emissionStrength: 0,
 			}),
@@ -51,44 +51,35 @@ export function init(scene) {
 		// Light
 		scene.addMesh(
 			new Sphere({
-				position: new Vector3(0, 0, 3),
-				radius: 1,
+				position: new Vector3(0, 17, 21),
+				radius: 12,
 				materialIndex: 1,
 			}),
 		);
 
-		// Front sphere
+		// Medium sphere
 		scene.addMesh(
 			new Sphere({
-				position: new Vector3(0, -.199, -.513),
+				position: new Vector3(-1.4, -.41, .4),
+				radius: .5,
+				materialIndex: 2,
+			}),
+		);
+
+		// Big sphere
+		scene.addMesh(
+			new Sphere({
+				position: new Vector3(0, -.199, 0),
 				radius: .7,
 				materialIndex: 2,
 			}),
 		);
 
-		// Left sphere
+		// Small sphere
 		scene.addMesh(
 			new Sphere({
-				position: new Vector3(-.701, -.199, .7),
-				radius: .7,
-				materialIndex: 2,
-			}),
-		);
-
-		// Right sphere
-		scene.addMesh(
-			new Sphere({
-				position: new Vector3(.701, -.199, .7),
-				radius: .7,
-				materialIndex: 2,
-			}),
-		);
-
-		// Top sphere
-		scene.addMesh(
-			new Sphere({
-				position: new Vector3(0, .944, .296),
-				radius: .7,
+				position: new Vector3(.91, -.602, .1),
+				radius: .3,
 				materialIndex: 2,
 			}),
 		);
