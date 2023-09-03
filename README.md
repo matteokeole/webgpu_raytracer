@@ -1,1 +1,1 @@
-# webgpu_raytracer
+# WebGPU raytracer
