@@ -30,11 +30,11 @@ export function update(delta) {
 
 	prevDirection = camera.forward;
 
-	window["debug-position"].textContent = [...camera.position].map(e => e.toFixed(2)).join(' ');
-	window["debug-rotation"].textContent = [...camera.rotation].map(e => e.toFixed(2)).join(' ');
-	window["debug-forward"].textContent = [...camera.forward].map(e => e.toFixed(2)).join(' ');
-	window["debug-right"].textContent = [...camera.right].map(e => e.toFixed(2)).join(' ');
-	window["debug-up"].textContent = [...camera.up].map(e => e.toFixed(2)).join(' ');
+	window["debug-position"].textContent = camera.position;
+	window["debug-rotation"].textContent = camera.rotation;
+	window["debug-forward"].textContent = camera.forward;
+	window["debug-right"].textContent = camera.right;
+	window["debug-up"].textContent = camera.up;
 
 	return accumulate;
 }
