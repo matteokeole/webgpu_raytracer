@@ -1,8 +1,8 @@
-import {AbstractRenderer} from "../src/index.js";
+import {Renderer as _Renderer} from "../src/index.js";
 import {Vector2} from "../src/math/index.js";
 import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "./utils.js";
 
-export class Renderer extends AbstractRenderer {
+export class Renderer extends _Renderer {
 	/** @type {Object.<String, GPUBindGroup>} */
 	#computeBindGroups;
 
@@ -115,7 +115,7 @@ export class Renderer extends AbstractRenderer {
 		this.#frameIndex++;
 		this.#computeTime = performance.now();
 
-		this._device.queue.writeBuffer(this._buffers.camera, 0, this.camera.getBuffer());
+		this._device.queue.writeBuffer(this._buffers.camera, 0, this.camera.asBuffer());
 		this._device.queue.writeBuffer(this._buffers.frameIndex, 0, Uint32Array.of(this.#frameIndex));
 		this._device.queue.writeBuffer(this._buffers.accumulate, 0, Uint32Array.of(accumulate));
 

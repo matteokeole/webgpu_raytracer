@@ -28,7 +28,7 @@ export class Scene {
 		const buffer = new Float32Array(Mesh.BUFFER_SIZE * meshCount);
 
 		for (let i = 0; i < meshCount; i++) {
-			buffer.set(this.#meshes[i].getBuffer(), Mesh.BUFFER_SIZE * i);
+			buffer.set(this.#meshes[i].asBuffer(), Mesh.BUFFER_SIZE * i);
 		}
 
 		return buffer;
@@ -40,7 +40,7 @@ export class Scene {
 		const buffer = new Float32Array(Material.BUFFER_SIZE * materialCount);
 
 		for (let i = 0; i < materialCount; i++) {
-			buffer.set(this.#materials[i].getBuffer(), Material.BUFFER_SIZE * i);
+			buffer.set(this.#materials[i].asBuffer(), Material.BUFFER_SIZE * i);
 		}
 
 		return buffer;

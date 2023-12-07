@@ -43,8 +43,8 @@ export function init(scene) {
 		scene.addMesh(
 			new Sphere({
 				position: new Vector3(0, -100.9, 0),
-				radius: 100,
 				materialIndex: 0,
+				radius: 100,
 			}),
 		);
 
@@ -52,8 +52,8 @@ export function init(scene) {
 		scene.addMesh(
 			new Sphere({
 				position: new Vector3(0, 17, 21),
-				radius: 12,
 				materialIndex: 1,
+				radius: 12,
 			}),
 		);
 
@@ -61,8 +61,8 @@ export function init(scene) {
 		scene.addMesh(
 			new Sphere({
 				position: new Vector3(-1.4, -.41, .4),
-				radius: .5,
 				materialIndex: 2,
+				radius: .5,
 			}),
 		);
 
@@ -70,8 +70,8 @@ export function init(scene) {
 		scene.addMesh(
 			new Sphere({
 				position: new Vector3(0, -.199, 0),
-				radius: .7,
 				materialIndex: 2,
+				radius: .7,
 			}),
 		);
 
@@ -79,8 +79,8 @@ export function init(scene) {
 		scene.addMesh(
 			new Sphere({
 				position: new Vector3(.91, -.602, .1),
-				radius: .3,
 				materialIndex: 2,
+				radius: .3,
 			}),
 		);
 	}

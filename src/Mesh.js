@@ -1,27 +1,48 @@
 import {Vector3} from "./math/index.js";
 
+/**
+ * @typedef {Object} MeshDescriptor
+ * @property {Vector3} position
+ * @property {Number} materialIndex
+ */
+
 export class Mesh {
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	static BUFFER_SIZE = 8;
 
-	/** @type {Vector3} */
-	_position;
-
-	/** @type {Number} */
-	_materialIndex;
+	/**
+	 * @type {Vector3}
+	 */
+	#position;
 
 	/**
-	 * @param {Vector3} position
-	 * @param {Number} materialIndex
+	 * @type {Number}
 	 */
-	constructor(position, materialIndex) {
-		this._position = position;
-		this._materialIndex = materialIndex;
+	#materialIndex;
+
+	/**
+	 * @param {MeshDescriptor} descriptor
+	 */
+	constructor(descriptor) {
+		this.#position = descriptor.position;
+		this.#materialIndex = descriptor.materialIndex;
+	}
+
+	getPosition() {
+		return this.#position;
+	}
+
+	getMaterialIndex() {
+		return this.#materialIndex;
 	}
 
 	/**
 	 * @abstract
 	 * @returns {Float32Array}
 	 */
-	getBuffer() {}
+	asBuffer() {
+		throw new Error("Not implemented");
+	}
 }

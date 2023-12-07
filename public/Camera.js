@@ -1,3 +1,3 @@
-import {AbstractCamera} from "../src/index.js";
+import {Camera as _Camera} from "../src/index.js";
 
-export class Camera extends AbstractCamera {}
+export class Camera extends _Camera {}

@@ -1,6 +1,6 @@
 import {clamp, Matrix4, PI, Vector2, Vector3} from "./math/index.js";
 
-export class AbstractCamera {
+export class Camera {
 	/** @type {Number} */
 	static TURN_VELOCITY = .001;
 
@@ -81,7 +81,7 @@ export class AbstractCamera {
 	}
 
 	/** @returns {Float32Array} */
-	getBuffer = function() {
+	asBuffer = function() {
 		const buffer = new Float32Array(36);
 		buffer.set(this.#projectionInverse);
 		buffer.set(this.#viewInverse, 16);
@@ -118,14 +118,14 @@ export class AbstractCamera {
 
 	/** @param {Number} z */
 	moveZ(z) {
-		const newForward = this.right.cross(AbstractCamera.UP);
+		const newForward = this.right.cross(Camera.UP);
 
 		this.targetPosition.add(newForward.multiplyScalar(z));
 	}
 
 	/** @param {Vector2} delta */
 	lookAt(delta) {
-		delta.multiplyScalar(AbstractCamera.TURN_VELOCITY);
+		delta.multiplyScalar(Camera.TURN_VELOCITY);
 
 		const newPitch = -delta[1];
 		const newYaw = delta[0];

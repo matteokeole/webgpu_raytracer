@@ -41,7 +41,7 @@ export class Material {
 	}
 
 	/** @returns {Float32Array} */
-	getBuffer() {
+	asBuffer() {
 		const buffer = new Float32Array(Material.BUFFER_SIZE);
 		buffer.set(this.#albedo);
 		buffer.set(this.#emissionColor, 4);

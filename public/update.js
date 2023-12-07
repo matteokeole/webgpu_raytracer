@@ -1,4 +1,4 @@
-import {AbstractCamera} from "../src/index.js";
+import {Camera} from "../src/index.js";
 import {Vector3} from "../src/math/index.js";
 import {VELOCITY, VELOCITY_SQRT1_2, keys, camera} from "./main.js";
 
@@ -19,7 +19,7 @@ export function update(delta) {
 
 	camera.position = camera.targetPosition
 		.clone()
-		.lerp(camera.position, AbstractCamera.LERP_FACTOR);
+		.lerp(camera.position, Camera.LERP_FACTOR);
 	camera.update();
 
 	// Cancel accumulation on camera movement

@@ -1,28 +1,37 @@
 import {Mesh} from "../../src/index.js";
 import {Vector3} from "../../src/math/index.js";
 
+/**
+ * @typedef {Object} SphereDescriptor
+ * @property {Vector3} position
+ * @property {Number} materialIndex
+ * @property {Number} radius
+ */
+
 export class Sphere extends Mesh {
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#radius;
 
 	/**
-	 * @param {Object} options
-	 * @param {Vector3} options.position
-	 * @param {Number} options.radius
-	 * @param {Number} options.materialIndex
+	 * @param {SphereDescriptor} descriptor
 	 */
-	constructor({position, radius, materialIndex}) {
-		super(position, materialIndex);
+	constructor(descriptor) {
+		super(descriptor);
 
-		this.#radius = radius;
+		this.#radius = descriptor.radius;
 	}
 
-	/** @override */
-	getBuffer() {
+	getRadius() {
+		return this.#radius;
+	}
+
+	asBuffer() {
 		const buffer = new Float32Array(Mesh.BUFFER_SIZE);
-		buffer.set(this._position);
+		buffer.set(this.getPosition());
 		buffer[4] = this.#radius;
-		buffer[5] = this._materialIndex;
+		buffer[5] = this.getMaterialIndex();
 
 		return buffer;
 	}

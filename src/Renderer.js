@@ -1,7 +1,7 @@
-import {AbstractCamera, Scene} from "./index.js";
+import {Camera, Scene} from "./index.js";
 import {Vector2} from "./math/index.js";
 
-export class AbstractRenderer {
+export class Renderer {
 	/** @type {?GPUDevice} */
 	_device;
 
@@ -20,7 +20,7 @@ export class AbstractRenderer {
 	/** @type {?Scene} */
 	scene;
 
-	/** @type {?AbstractCamera} */
+	/** @type {?Camera} */
 	camera;
 
 	/** @param {HTMLCanvasElement} canvas */
