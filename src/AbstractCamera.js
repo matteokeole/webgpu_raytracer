@@ -1,4 +1,4 @@
-import {clamp, Matrix4, PI, Vector2, Vector3} from "src/math";
+import {clamp, Matrix4, PI, Vector2, Vector3} from "./math/index.js";
 
 export class AbstractCamera {
 	/** @type {Number} */

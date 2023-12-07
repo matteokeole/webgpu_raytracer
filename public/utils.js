@@ -1,4 +1,4 @@
-import {Material, Mesh} from "src";
+import {Material, Mesh} from "../src/index.js";
 
 /**
  * @param {GPUDevice} device

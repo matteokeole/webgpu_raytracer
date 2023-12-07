@@ -1,4 +1,4 @@
-import {Vector2} from "src/math";
+import {Vector2} from "../src/math/index.js";
 import {keys, camera, renderer} from "./main.js";
 
 export function listen() {

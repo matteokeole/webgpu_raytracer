@@ -1,4 +1,4 @@
-import {AbstractCamera, Scene} from "src";
+import {AbstractCamera, Scene} from "./index.js";
 import {Vector2} from "./math/index.js";
 
 export class AbstractRenderer {

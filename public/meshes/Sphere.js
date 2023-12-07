@@ -1,5 +1,5 @@
-import {Mesh} from "src";
-import {Vector3} from "src/math";
+import {Mesh} from "../../src/index.js";
+import {Vector3} from "../../src/math/index.js";
 
 export class Sphere extends Mesh {
 	/** @type {Number} */

@@ -1,5 +1,5 @@
-import {AbstractRenderer} from "src";
-import {Vector2} from "src/math";
+import {AbstractRenderer} from "../src/index.js";
+import {Vector2} from "../src/math/index.js";
 import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "./utils.js";
 
 export class Renderer extends AbstractRenderer {

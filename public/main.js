@@ -1,5 +1,5 @@
-import {Scene} from "src";
-import {SQRT1_2, Vector2, Vector3} from "src/math";
+import {Scene} from "../src/index.js";
+import {SQRT1_2, Vector2, Vector3} from "../src/math/index.js";
 import {Camera} from "./Camera.js";
 import {Renderer} from "./Renderer.js";
 import {listen} from "./events.js";

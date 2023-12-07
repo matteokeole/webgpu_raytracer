@@ -1,5 +1,5 @@
-import {AbstractCamera} from "src";
-import {Vector3} from "src/math";
+import {AbstractCamera} from "../src/index.js";
+import {Vector3} from "../src/math/index.js";
 import {VELOCITY, VELOCITY_SQRT1_2, keys, camera} from "./main.js";
 
 /**

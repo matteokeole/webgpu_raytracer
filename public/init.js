@@ -1,5 +1,5 @@
-import {Material, Scene} from "src";
-import {Vector3} from "src/math";
+import {Material, Scene} from "../src/index.js";
+import {Vector3} from "../src/math/index.js";
 import {Sphere} from "./meshes/Sphere.js";
 
 /** @param {Scene} scene */
