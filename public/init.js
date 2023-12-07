@@ -2,7 +2,9 @@ import {Material, Scene} from "../src/index.js";
 import {Vector3} from "../src/math/index.js";
 import {Sphere} from "./meshes/Sphere.js";
 
-/** @param {Scene} scene */
+/**
+ * @param {Scene} scene
+ */
 export function init(scene) {
 	// Materials
 	{

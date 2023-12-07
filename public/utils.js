@@ -4,8 +4,8 @@ import {Material, Mesh} from "../src/index.js";
  * @param {GPUDevice} device
  * @param {HTMLCanvasElement} canvas
  * @param {Number} meshCount
- * @param {Number} materialCaount
- * @returns {Object.<String, GPUBuffer>}
+ * @param {Number} materialCount
+ * @returns {Record.<String, GPUBuffer|GPUTexture>}
  */
 export const createBuffers = (device, canvas, meshCount, materialCount) => [
 	device.createTexture({
@@ -46,21 +46,8 @@ export const createBuffers = (device, canvas, meshCount, materialCount) => [
 
 /**
  * @param {GPUDevice} device
- * @param {String} path
- * @returns {GPUShaderModule}
- */
-export async function createShaderModule(device, path) {
-	const source = await (await fetch(path)).text();
-
-	return device.createShaderModule({
-		code: source,
-	});
-}
-
-/**
- * @param {GPUDevice} device
  * @param {GPUShaderModule} computeShaderModule
- * @param {Object.<String, GPUBuffer>} buffers
+ * @param {Record.<String, GPUBuffer>} buffers
  * @param {GPUTextureView} textureView
  * @returns {Array}
  */
@@ -153,7 +140,7 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
 				{
 					binding: 0,
 					resource: {
-						buffer: buffers.camera,
+						buffer: buffers.cameraUniform,
 					},
 				}, {
 					binding: 1,
@@ -200,7 +187,7 @@ export function createComputePipeline(device, computeShaderModule, buffers, text
  * @param {GPUShaderModule} fragmentShaderModule
  * @param {GPUTextureView} textureView
  * @param {GPUSampler} textureSampler
- * @param {String} format
+ * @param {GPUTextureFormat} format
  * @returns {Array}
  */
 export function createRenderPipeline(device, vertexShaderModule, fragmentShaderModule, textureView, textureSampler, format) {
@@ -244,7 +231,11 @@ export function createRenderPipeline(device, vertexShaderModule, fragmentShaderM
 			fragment: {
 				module: fragmentShaderModule,
 				entryPoint: "main",
-				targets: [{format}],
+				targets: [
+					{
+						format: format,
+					}
+				],
 			},
 		}),
 	];

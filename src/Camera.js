@@ -1,49 +1,91 @@
 import {clamp, Matrix4, PI, Vector2, Vector3} from "./math/index.js";
 
 export class Camera {
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	static TURN_VELOCITY = .001;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	static LERP_FACTOR = .95;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	static UP = new Vector3(0, 1, 0);
 
-	/** @type {Number} */
+	/**
+	 * @param {Number} yaw
+	 * @param {Number} pitch
+	 */
+	static #convertSphericalToCartesian(yaw, pitch) {
+		return new Vector3(
+			Math.cos(pitch) * Math.sin(yaw),
+			Math.sin(pitch),
+			Math.cos(pitch) * Math.cos(yaw),
+		);
+	}
+
+	/**
+	 * @type {Number}
+	 */
 	#fieldOfView;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#aspectRatio;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#nearClipPlane;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#farClipPlane;
 
-	/** @type {Matrix4} */
+	/**
+	 * @type {Matrix4}
+	 */
 	#projectionInverse;
 
-	/** @type {Matrix4} */
+	/**
+	 * @type {Matrix4}
+	 */
 	#viewInverse;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	position;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	targetPosition;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	rotation;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	forward;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	up;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	right;
 
 	/**
@@ -70,60 +112,72 @@ export class Camera {
 		this.right = new Vector3(1, 0, 0);
 	}
 
-	/** @returns {Matrix4} */
 	getProjectionInverse() {
 		return this.#projectionInverse;
 	}
 
-	/** @returns {Matrix4} */
 	getViewInverse() {
 		return this.#viewInverse;
 	}
 
-	/** @returns {Float32Array} */
-	asBuffer = function() {
+	/**
+	 * @returns {Float32Array}
+	 */
+	asBuffer() {
 		const buffer = new Float32Array(36);
 		buffer.set(this.#projectionInverse);
 		buffer.set(this.#viewInverse, 16);
 		buffer.set(this.position, 32);
 
 		return buffer;
-	};
+	}
 
-	/** @param {Number} x */
+	/**
+	 * @param {Number} x
+	 */
 	truck(x) {
 		const right = this.right.clone();
 
 		this.targetPosition.add(right.multiplyScalar(x));
 	}
 
-	/** @param {Number} y */
+	/**
+	 * @param {Number} y
+	 */
 	pedestal(y) {
 		const up = this.up.clone();
 
 		this.targetPosition.add(up.multiplyScalar(y));
 	}
 
-	/** @param {Number} z */
+	/**
+	 * @param {Number} z
+	 */
 	dolly(z) {
 		const forward = this.forward.clone();
 
 		this.targetPosition.add(forward.multiplyScalar(z));
 	}
 
-	/** @param {Number} y */
+	/**
+	 * @param {Number} y
+	 */
 	moveY(y) {
 		this.targetPosition[1] += y;
 	}
 
-	/** @param {Number} z */
+	/**
+	 * @param {Number} z
+	 */
 	moveZ(z) {
 		const newForward = this.right.cross(Camera.UP);
 
 		this.targetPosition.add(newForward.multiplyScalar(z));
 	}
 
-	/** @param {Vector2} delta */
+	/**
+	 * @param {Vector2} delta
+	 */
 	lookAt(delta) {
 		delta.multiplyScalar(Camera.TURN_VELOCITY);
 
@@ -138,8 +192,8 @@ export class Camera {
 		const pitch = this.rotation[0];
 		const yaw = this.rotation[1];
 
-		this.forward = sphericalToCartesian(yaw, pitch);
-		this.right = sphericalToCartesian(yaw + PI * .5, 0);
+		this.forward = Camera.#convertSphericalToCartesian(yaw, pitch);
+		this.right = Camera.#convertSphericalToCartesian(yaw + PI * .5, 0);
 		this.up = this.forward.cross(this.right);
 	}
 
@@ -152,10 +206,3 @@ export class Camera {
 		).invert();
 	}
 }
-
-/** @todo Refactor */
-const sphericalToCartesian = (yaw, pitch) => new Vector3(
-	Math.cos(pitch) * Math.sin(yaw),
-	Math.sin(pitch),
-	Math.cos(pitch) * Math.cos(yaw),
-);

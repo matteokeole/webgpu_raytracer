@@ -1,46 +1,68 @@
 import {Vector3} from "./math/index.js";
 
+/**
+ * @typedef {Object} MaterialDescriptor
+ * @property {Vector3} albedo
+ * @property {Number} roughness
+ * @property {Vector3} emissionColor
+ * @property {Number} emissionStrength
+ */
+
 export class Material {
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	static BUFFER_SIZE = 12;
 
-	/** @type {Number} */
-	#id;
-
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	#albedo;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#roughness;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	#emissionColor;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#emissionStrength;
 
 	/**
-	 * @param {Object} options
-	 * @param {Number} options.id
-	 * @param {Vector3} options.albedo
-	 * @param {Number} options.roughness
-	 * @param {Vector3} options.emissionColor
-	 * @param {Number} options.emissionStrength
+	 * @param {MaterialDescriptor} descriptor
 	 */
-	constructor({id, albedo, roughness, emissionColor, emissionStrength}) {
-		this.#id = id;
-		this.#albedo = albedo;
-		this.#roughness = roughness;
-		this.#emissionColor = emissionColor;
-		this.#emissionStrength = emissionStrength;
+	constructor(descriptor) {
+		this.#albedo = descriptor.albedo;
+		this.#roughness = descriptor.roughness;
+		this.#emissionColor = descriptor.emissionColor;
+		this.#emissionStrength = descriptor.emissionStrength;
 	}
 
-	/** @returns {Number} */
-	getId() {
-		return this.#id;
+	getAlbedo() {
+		return this.#albedo;
 	}
 
-	/** @returns {Float32Array} */
+	getRoughness() {
+		return this.#roughness;
+	}
+
+	getEmissionColor() {
+		return this.#emissionColor;
+	}
+
+	getEmissionStrength() {
+		return this.#emissionStrength;
+	}
+
+	/**
+	 * @returns {Float32Array}
+	 */
 	asBuffer() {
 		const buffer = new Float32Array(Material.BUFFER_SIZE);
 		buffer.set(this.#albedo);

@@ -1,35 +1,53 @@
 import {Renderer as _Renderer} from "../src/index.js";
 import {Vector2} from "../src/math/index.js";
-import {createBuffers, createShaderModule, createComputePipeline, createRenderPipeline} from "./utils.js";
+import {createBuffers, createComputePipeline, createRenderPipeline} from "./utils.js";
 
 export class Renderer extends _Renderer {
-	/** @type {Object.<String, GPUBindGroup>} */
+	/**
+	 * @type {Record.<String, GPUBindGroup>}
+	 */
 	#computeBindGroups;
 
-	/** @type {Object.<String, GPUBindGroup>} */
+	/**
+	 * @type {Record.<String, GPUBindGroup>}
+	 */
 	#renderBindGroups;
 
-	/** @type {?GPUComputePipeline} */
+	/**
+	 * @type {?GPUComputePipeline}
+	 */
 	#computePipeline;
 
-	/** @type {?GPURenderPipeline} */
+	/**
+	 * @type {?GPURenderPipeline}
+	 */
 	#renderPipeline;
 
-	/** @type {?GPUTextureView} */
+	/**
+	 * @type {?GPUTextureView}
+	 */
 	#textureView;
 
-	/** @type {?GPUTextureSampler} */
+	/**
+	 * @type {?GPUSampler}
+	 */
 	#textureSampler;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#frameIndex;
 
-	/** @type {Number} */
+	/**
+	 * @type {Number}
+	 */
 	#computeTime;
 
-	/** @param {HTMLCanvasElement} canvas */
-	constructor(canvas) {
-		super(canvas);
+	/**
+	 * @param {import("../src/Renderer.js").RendererDescriptor} descriptor
+	 */
+	constructor(descriptor) {
+		super(descriptor);
 
 		this.#computeBindGroups = {};
 		this.#renderBindGroups = {};
@@ -37,7 +55,6 @@ export class Renderer extends _Renderer {
 		this.#computeTime = 0;
 	}
 
-	/** @override */
 	async initialize() {
 		if (navigator.gpu == null) throw "WebGPU is not supported.";
 
@@ -47,27 +64,25 @@ export class Renderer extends _Renderer {
 
 		this._device = await adapter.requestDevice();
 		this._context = this._canvas.getContext("webgpu");
-		this._canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
 		this._context.configure({
 			device: this._device,
-			format: this._canvasFormat,
+			format: navigator.gpu.getPreferredCanvasFormat(),
 		});
 
 		await this.createBuffers();
 	}
 
-	/** @override */
 	async createBuffers() {
 		[
 			this._buffers.textureStorage,
 			this._buffers.accumulationStorage,
-			this._buffers.camera,
+			this._buffers.cameraUniform,
 			this._buffers.meshes,
 			this._buffers.materials,
 			this._buffers.frameIndex,
 			this._buffers.accumulate,
-		] = createBuffers(this._device, this._canvas, this.scene.getMeshes().length, this.scene.getMaterials().length);
+		] = createBuffers(this._device, this._canvas, this.getScene().getMeshes().length, this.getScene().getMaterials().length);
 
 		this.#textureView = this._buffers.textureStorage.createView();
 		this.#textureSampler = this._device.createSampler({
@@ -79,7 +94,8 @@ export class Renderer extends _Renderer {
 			maxAnisotropy: 1,
 		});
 
-		const computeShaderModule = await createShaderModule(this._device, "assets/shaders/compute.wgsl");
+		const computeShaderSource = await fetch("assets/shaders/compute.wgsl").then(response => response.text());
+		const computeShaderModule = this._createShaderModule(computeShaderSource);
 		[
 			this.#computeBindGroups.texture,
 			this.#computeBindGroups.scene,
@@ -87,24 +103,26 @@ export class Renderer extends _Renderer {
 			this.#computePipeline,
 		] = createComputePipeline(this._device, computeShaderModule, this._buffers, this.#textureView);
 
-		const vertexShaderModule = await createShaderModule(this._device, "assets/shaders/vertex.wgsl");
-		const fragmentShaderModule = await createShaderModule(this._device, "assets/shaders/fragment.wgsl");
+		const vertexShaderSource = await fetch("assets/shaders/vertex.wgsl").then(response => response.text());
+		const fragmentShaderSource = await fetch("assets/shaders/fragment.wgsl").then(response => response.text());
+
+		const vertexShaderModule = this._createShaderModule(vertexShaderSource);
+		const fragmentShaderModule = this._createShaderModule(fragmentShaderSource);
 		[
 			this.#renderBindGroups.texture,
 			this.#renderPipeline,
-		] = createRenderPipeline(this._device, vertexShaderModule, fragmentShaderModule, this.#textureView, this.#textureSampler, this._canvasFormat);
+		] = createRenderPipeline(this._device, vertexShaderModule, fragmentShaderModule, this.#textureView, this.#textureSampler, navigator.gpu.getPreferredCanvasFormat());
 
 		this._device.queue.writeBuffer(this._buffers.accumulationStorage, 0, new Float32Array(this._canvas.width * this._canvas.height * 4));
 
-		new Float32Array(this._buffers.meshes.getMappedRange()).set(this.scene.getMeshBuffer());
+		new Float32Array(this._buffers.meshes.getMappedRange()).set(this.getScene().getMeshBuffer());
 		this._buffers.meshes.unmap();
 
-		new Float32Array(this._buffers.materials.getMappedRange()).set(this.scene.getMaterialBuffer());
+		new Float32Array(this._buffers.materials.getMappedRange()).set(this.getScene().getMaterialBuffer());
 		this._buffers.materials.unmap();
 	}
 
 	/**
-	 * @override
 	 * @param {Boolean} accumulate
 	 */
 	render(accumulate) {
@@ -115,7 +133,7 @@ export class Renderer extends _Renderer {
 		this.#frameIndex++;
 		this.#computeTime = performance.now();
 
-		this._device.queue.writeBuffer(this._buffers.camera, 0, this.camera.asBuffer());
+		this._device.queue.writeBuffer(this._buffers.cameraUniform, 0, this.getCamera().asBuffer());
 		this._device.queue.writeBuffer(this._buffers.frameIndex, 0, Uint32Array.of(this.#frameIndex));
 		this._device.queue.writeBuffer(this._buffers.accumulate, 0, Uint32Array.of(accumulate));
 

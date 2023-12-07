@@ -1,10 +1,14 @@
 import {Material, Mesh} from "./index.js";
 
 export class Scene {
-	/** @type {Mesh[]} */
+	/**
+	 * @type {Mesh[]}
+	 */
 	#meshes;
 
-	/** @type {Material[]} */
+	/**
+	 * @type {Material[]}
+	 */
 	#materials;
 
 	constructor() {
@@ -12,17 +16,17 @@ export class Scene {
 		this.#materials = [];
 	}
 
-	/** @returns {Mesh[]} */
 	getMeshes() {
 		return this.#meshes;
 	}
 
-	/** @returns {Material[]} */
 	getMaterials() {
 		return this.#materials;
 	}
 
-	/** @returns {Float32Array} */
+	/**
+	 * @returns {Float32Array}
+	 */
 	getMeshBuffer() {
 		const meshCount = this.#meshes.length;
 		const buffer = new Float32Array(Mesh.BUFFER_SIZE * meshCount);
@@ -34,7 +38,9 @@ export class Scene {
 		return buffer;
 	}
 
-	/** @returns {Float32Array} */
+	/**
+	 * @returns {Float32Array}
+	 */
 	getMaterialBuffer() {
 		const materialCount = this.#materials.length;
 		const buffer = new Float32Array(Material.BUFFER_SIZE * materialCount);
@@ -46,12 +52,16 @@ export class Scene {
 		return buffer;
 	}
 
-	/** @param {Mesh} mesh */
+	/**
+	 * @param {Mesh} mesh
+	 */
 	addMesh(mesh) {
 		this.#meshes.push(mesh);
 	}
 
-	/** @param {Material} material */
+	/**
+	 * @param {Material} material
+	 */
 	addMaterial(material) {
 		this.#materials.push(material);
 	}
