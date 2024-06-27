@@ -27,6 +27,7 @@
 	pointer-events: none;
 	z-index: 1;
 }
+
 #crosshair::before, #crosshair::after {
 	content: "";
 	box-sizing: border-box;

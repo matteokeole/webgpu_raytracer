@@ -1,39 +1,43 @@
 .debug {
 	margin: 10px;
 	padding: 5px 10px;
-	bottom: 0;
+	top: 0;
 	position: absolute;
-	border-radius: 5px;
 	background-color: #000a;
-	backdrop-filter: blur(20px);
 	color: #ddd;
 	font-family: Consolas, monospace;
+	font-size: .75rem;
 	z-index: 1;
 }
 
 .debug span {
 	display: block;
 }
+
 .debug span::before {
 	color: #aaa;
-	font-style: italic;
 }
 
 .debug #debug-position::before {
 	content: "Position: ";
 }
+
 .debug #debug-rotation::before {
 	content: "Rotation: ";
 }
+
 .debug #debug-forward::before {
 	content: "Forward: ";
 }
+
 .debug #debug-right::before {
 	content: "Right: ";
 }
+
 .debug #debug-up::before {
 	content: "Up: ";
 }
+
 .debug #debug-compute-time::before {
 	content: "Compute time: ";
 }
